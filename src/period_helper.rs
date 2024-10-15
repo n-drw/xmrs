@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "micromath")]
+#[allow(unused_imports)]
 use micromath::F32Ext;
 #[cfg(feature = "libm")]
 use num_traits::float::Float;

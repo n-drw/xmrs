@@ -4,6 +4,7 @@ use alloc::string::String;
 use alloc::{vec, vec::Vec};
 
 #[cfg(feature = "micromath")]
+#[allow(unused_imports)]
 use micromath::F32Ext;
 #[cfg(feature = "libm")]
 use num_traits::float::Float;
@@ -94,20 +95,20 @@ impl InstrHelper {
         SampleDataType::Depth8(triangle_data)
     }
 
-    fn gen_adr_frames(bpm: u16, speed: u8) -> [u16; 16] {
-        let tick_duration_ms = (2500.0 / bpm as f32) * speed as f32;
+    // fn gen_adr_frames(bpm: u16, speed: u8) -> [u16; 16] {
+    //     let tick_duration_ms = (2500.0 / bpm as f32) * speed as f32;
 
-        let adr_durations_ms: [u32; 16] = [
-            2, 8, 16, 24, 38, 56, 68, 80, 100, 250, 500, 800, 1100, 1500, 2400, 3900,
-        ];
+    //     let adr_durations_ms: [u32; 16] = [
+    //         2, 8, 16, 24, 38, 56, 68, 80, 100, 250, 500, 800, 1100, 1500, 2400, 3900,
+    //     ];
 
-        let mut frames_for_adr: [u16; 16] = [0; 16];
-        for (i, &duration_ms) in adr_durations_ms.iter().enumerate() {
-            frames_for_adr[i] = (duration_ms as f32 / tick_duration_ms).round() as u16;
-        }
+    //     let mut frames_for_adr: [u16; 16] = [0; 16];
+    //     for (i, &duration_ms) in adr_durations_ms.iter().enumerate() {
+    //         frames_for_adr[i] = (duration_ms as f32 / tick_duration_ms).round() as u16;
+    //     }
 
-        frames_for_adr
-    }
+    //     frames_for_adr
+    // }
 
     fn sid_to_xi(sid: &SidVoice) -> InstrDefault {
         // let adr_frames = Self::gen_adr_frames(125, 2);
