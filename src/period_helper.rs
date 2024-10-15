@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 #[allow(unused_imports)]
 use micromath::F32Ext;
 #[cfg(feature = "libm")]
+#[allow(unused_imports)]
 use num_traits::float::Float;
 
 /// Historical Frequencies to load old data. Default is Linear.
