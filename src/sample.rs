@@ -17,8 +17,10 @@ pub enum LoopType {
 /// is sample recorded with 8 or 16 bits depth
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum SampleDataType {
-    Depth8(Vec<i8>),
-    Depth16(Vec<i16>),
+    Mono8(Vec<i8>),
+    Mono16(Vec<i16>),
+    Stereo8(Vec<i8>),
+    Stereo16(Vec<i16>),
 }
 
 /// A Real Data sample
@@ -48,24 +50,30 @@ impl Sample {
     /// return sample length
     pub fn len(&self) -> usize {
         match &self.data {
-            SampleDataType::Depth8(v) => v.len(),
-            SampleDataType::Depth16(v) => v.len(),
+            SampleDataType::Mono8(v) => v.len(),
+            SampleDataType::Mono16(v) => v.len(),
+            SampleDataType::Stereo8(v) => v.len() / 2,
+            SampleDataType::Stereo16(v) => v.len() / 2,
         }
     }
 
     /// return sample at seek
-    pub fn at(&self, seek: usize) -> f32 {
+    pub fn at(&self, seek: usize) -> (f32, f32) {
         match &self.data {
-            SampleDataType::Depth8(v) => v[seek] as f32 / 128.0,
-            SampleDataType::Depth16(v) => v[seek] as f32 / 32768.0,
+            SampleDataType::Mono8(v) => (v[seek] as f32 / 128.0, v[seek] as f32 / 128.0),
+            SampleDataType::Mono16(v) => (v[seek] as f32 / 32768.0, v[seek] as f32 / 32768.0),
+            SampleDataType::Stereo8(v) => (v[seek * 2] as f32 / 128.0, v[seek * 2 + 1] as f32 / 128.0),
+            SampleDataType::Stereo16(v) => (v[seek * 2] as f32 / 32768.0, v[seek * 2 + 1] as f32 / 32768.0),
         }
     }
 
     /// return sample size (8 or 16 bits)
     pub fn bits(&self) -> u8 {
         match &self.data {
-            SampleDataType::Depth8(_) => 8,
-            SampleDataType::Depth16(_) => 16,
+            SampleDataType::Mono8(_) => 8,
+            SampleDataType::Mono16(_) => 16,
+            SampleDataType::Stereo8(_) => 8,
+            SampleDataType::Stereo16(_) => 16,
         }
     }
 }

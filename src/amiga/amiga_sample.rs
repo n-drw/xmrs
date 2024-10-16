@@ -79,7 +79,7 @@ impl AmigaSample {
             flags: flag,
             panning: 0.5,
             relative_note: 0,
-            data: crate::prelude::SampleDataType::Depth8(vec![]),
+            data: crate::prelude::SampleDataType::Mono8(vec![]),
         }
     }
 }

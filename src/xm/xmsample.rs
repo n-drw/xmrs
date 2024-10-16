@@ -69,12 +69,12 @@ impl XmSample {
             // 16 bits data
             let sample = u8_slice_to_vec_u16(slice);
             let sample2 = delta16_to_sample(sample);
-            SampleDataType::Depth16(sample2)
+            SampleDataType::Mono16(sample2)
         } else {
             // 8 bits data
             let sample = slice.to_vec();
             let sample2 = delta8_to_sample(sample);
-            SampleDataType::Depth8(sample2)
+            SampleDataType::Mono8(sample2)
         };
         self.data = Some(d3);
 
@@ -83,12 +83,12 @@ impl XmSample {
 
     pub fn save(&mut self) -> Result<Vec<u8>, EncodeError> {
         self.header.length = match &self.data {
-            Some(SampleDataType::Depth8(d)) => d.len() as u32,
-            Some(SampleDataType::Depth16(d)) => {
+            Some(SampleDataType::Mono8(d)) => d.len() as u32,
+            Some(SampleDataType::Mono16(d)) => {
                 self.header.flags |= 0b0001_0000;
                 2 * d.len() as u32
             }
-            None => 0,
+            _ => 0,
         };
         let h = bincode::serde::encode_to_vec(&self.header, bincode::config::legacy())?;
         Ok(h)
@@ -97,12 +97,12 @@ impl XmSample {
     /// You must call save() before to save good length size to header
     pub fn save_sample(&mut self) -> Result<Vec<u8>, EncodeError> {
         let d = match &self.data {
-            Some(SampleDataType::Depth8(d)) => sample8_to_delta(d),
-            Some(SampleDataType::Depth16(d)) => {
+            Some(SampleDataType::Mono8(d)) => sample8_to_delta(d),
+            Some(SampleDataType::Mono16(d)) => {
                 let d = sample16_to_delta(d);
                 vec_u16_to_u8_slice(d)
             }
-            None => vec![],
+            _ => vec![],
         };
         Ok(d)
     }
@@ -111,7 +111,7 @@ impl XmSample {
         let mut loop_start = self.header.loop_start;
         let mut loop_length = self.header.loop_length;
 
-        if let Some(SampleDataType::Depth16(_)) = &self.data {
+        if let Some(SampleDataType::Mono16(_)) = &self.data {
             loop_start >>= 1;
             loop_length >>= 1;
         }
@@ -132,7 +132,7 @@ impl XmSample {
 
         let data: SampleDataType = match &self.data {
             Some(d) => d.clone(),
-            None => SampleDataType::Depth8(vec![]),
+            None => SampleDataType::Mono8(vec![]),
         };
 
         Sample {
@@ -160,15 +160,17 @@ impl XmSample {
                 let mut loop_start = s.loop_start;
                 let mut loop_length = s.loop_length;
 
-                if let SampleDataType::Depth16(_) = &s.data {
+                if let SampleDataType::Mono16(_) = &s.data {
                     loop_start <<= 1;
                     loop_length <<= 1;
                 }
 
                 let mut xms = XmSample::default();
                 xms.header.length = match &s.data {
-                    SampleDataType::Depth8(d) => d.len() as u32,
-                    SampleDataType::Depth16(d) => 2 * d.len() as u32,
+                    SampleDataType::Mono8(d) => d.len() as u32,
+                    SampleDataType::Mono16(d) => 2 * d.len() as u32,
+                    SampleDataType::Stereo8(d) => 2 * d.len() as u32,
+                    SampleDataType::Stereo16(d) => 2 * 2 * d.len() as u32,
                 };
                 xms.header.loop_start = loop_start;
                 xms.header.loop_length = loop_length;
@@ -187,8 +189,8 @@ impl XmSample {
 
     pub fn len(&self) -> u32 {
         match &self.data {
-            Some(SampleDataType::Depth8(d)) => d.len() as u32,
-            Some(SampleDataType::Depth16(d)) => d.len() as u32,
+            Some(SampleDataType::Mono8(d)) => d.len() as u32,
+            Some(SampleDataType::Mono16(d)) => d.len() as u32,
             _ => 0,
         }
     }

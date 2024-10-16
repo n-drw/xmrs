@@ -15,37 +15,32 @@ pub struct InstrHelper;
 impl InstrHelper {
     fn sid_to_sample(voice: &SidVoice) -> Sample {
         let mut name = String::from("Unknown Waveform");
-        let mut data = SampleDataType::Depth8(vec![0; 128]); // Par défaut: silence
+        let mut data = SampleDataType::Mono8(vec![0; 128]);
         let flags = LoopType::Forward;
 
-        // Définir les paramètres basés sur les contrôles de SidVoice
         if voice.ctrl_noise {
             name = String::from("Noise");
-            data = Self::generate_sid_noise_sample(); // Génération d'un sample bruité
+            data = Self::generate_sid_noise_sample();
         } else if voice.ctrl_pulse {
             name = format!("Pulse Wave {}", voice.pw);
-            data = Self::generate_pulse_sample(voice.pw); // Génération d'un sample onde carrée avec largeur d'impulsion
-                                                          // flags = LoopType::Forward;  // Peut-être que les ondes carrées peuvent boucler en avant
+            data = Self::generate_pulse_sample(voice.pw);
         } else if voice.ctrl_sawtooth {
             name = String::from("Sawtooth Wave");
-            data = Self::generate_sawtooth_sample(); // Génération d'un sample onde dent de scie
-                                                     // finetune = 0.25;  // Une dent de scie peut avoir un finetune particulier
+            data = Self::generate_sawtooth_sample();
         } else if voice.ctrl_triangle {
             name = String::from("Triangle Wave");
-            data = Self::generate_triangle_sample(); // Génération d'un sample onde triangle
-                                                     // flags = LoopType::PingPong;  // Exemple: onde triangle en ping-pong
+            data = Self::generate_triangle_sample();
         }
 
-        // Définir le sample
         Sample {
             name,
             loop_start: 0,
-            loop_length: 128, // Exemple arbitraire: longueur de boucle
-            volume: 1.0,      // Volume par défaut
+            loop_length: 128,
+            volume: 1.0,
             finetune: 0.0,
             flags,
             panning: 0.5,
-            relative_note: 0, // Correspond à C-4 par défaut
+            relative_note: 0, // C-4
             data,
         }
     }
@@ -61,7 +56,7 @@ impl InstrHelper {
             noise_data[i] = value_u8.wrapping_sub(128) as i8;
         }
 
-        SampleDataType::Depth8(noise_data)
+        SampleDataType::Mono8(noise_data)
     }
 
     fn generate_pulse_sample(pw: u16) -> SampleDataType {
@@ -70,14 +65,14 @@ impl InstrHelper {
         for i in 0..128 {
             pulse_data[i] = if i < duty_cycle { 127 } else { -127 };
         }
-        SampleDataType::Depth8(pulse_data)
+        SampleDataType::Mono8(pulse_data)
     }
 
     fn generate_sawtooth_sample() -> SampleDataType {
         let sawtooth_data: Vec<i8> = (0..128)
             .map(|x| (2 * x as u8).wrapping_sub(128) as i8)
             .collect();
-        SampleDataType::Depth8(sawtooth_data)
+        SampleDataType::Mono8(sawtooth_data)
     }
 
     fn generate_triangle_sample() -> SampleDataType {
@@ -93,7 +88,7 @@ impl InstrHelper {
             triangle_data[i as usize] = value;
         }
 
-        SampleDataType::Depth8(triangle_data)
+        SampleDataType::Mono8(triangle_data)
     }
 
     // fn gen_adr_frames(bpm: u16, speed: u8) -> [u16; 16] {
@@ -191,25 +186,21 @@ impl InstrHelper {
                 "Noise {:02X}{:02X}",
                 irs.sid.voice[0].ad, irs.sid.voice[0].sr
             );
-        //            idst.name = String::from("Noise");
         } else if irs.sid.voice[0].ctrl_pulse {
             idst.name = format!(
                 "Pulse {:02X}{:02X}",
                 irs.sid.voice[0].ad, irs.sid.voice[0].sr
             );
-        //            idst.name = String::from("Pulse");
         } else if irs.sid.voice[0].ctrl_sawtooth {
             idst.name = format!(
                 "Sawtooth {:02X}{:02X}",
                 irs.sid.voice[0].ad, irs.sid.voice[0].sr
             );
-            // idst.name = String::from("Sawtooth");
         } else if irs.sid.voice[0].ctrl_triangle {
             idst.name = format!(
                 "Triangle {:02X}{:02X}",
                 irs.sid.voice[0].ad, irs.sid.voice[0].sr
             );
-            // idst.name = String::from("Triangle");
         }
         if original {
             idst.instr_type = InstrumentType::RobSid(irs.clone());

@@ -132,7 +132,7 @@ impl AmigaModule {
         let mut instr: Instrument = Instrument::default();
 
         let mut sample: Sample = self.samples[sample_index].to_sample();
-        sample.data = SampleDataType::Depth8(self.audio[sample_index].clone());
+        sample.data = SampleDataType::Mono8(self.audio[sample_index].clone());
 
         instr.name = sample.name.clone();
 

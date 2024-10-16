@@ -94,14 +94,20 @@ impl S3mPcmInstr {
             self.len as usize
         };
 
-        // TODO: One day, create a real xm instrument with pan for stereo samples
-        // today code create mono from stereo samples.
         let dst = if self.is_16bits() {
             let src = Self::convert_u8_to_u16_vec(&data[offset..(offset + len * 2)])?;
-            SampleDataType::Depth16(self.convert_16bit_sample(src.as_slice()))
+            if self.is_stereo() {
+                SampleDataType::Stereo16(self.convert_16bit_sample(src.as_slice()))
+            } else {
+                SampleDataType::Mono16(self.convert_16bit_sample(src.as_slice()))
+            }
         } else {
             let src = &data[offset..offset + len];
-            SampleDataType::Depth8(self.convert_8bit_sample(src))
+            if self.is_stereo() {
+                SampleDataType::Stereo8(self.convert_8bit_sample(src))
+            } else {
+                SampleDataType::Mono8(self.convert_8bit_sample(src))
+            }
         };
 
         Ok(dst)
@@ -132,7 +138,8 @@ impl S3mPcmInstr {
             for i in 0..half_length {
                 let l = left_channel[i] ^ 0x80;
                 let r = right_channel[i] ^ 0x80;
-                dst.push(((l as i16 + r as i16) / 2) as i8);
+                dst.push(l as i8);
+                dst.push(r as i8);
             }
         } else {
             for i in 0..length {
@@ -153,7 +160,8 @@ impl S3mPcmInstr {
             for i in 0..half_length {
                 let l = left_channel[i] ^ 0x8000;
                 let r = right_channel[i] ^ 0x8000;
-                dst.push((l as i16 + r as i16) / 2);
+                dst.push(l as i16);
+                dst.push(r as i16);
             }
         } else {
             for i in 0..length {
@@ -519,9 +527,9 @@ impl S3mModule {
                         sdt.clone()
                     } else {
                         if pcm.is_16bits() {
-                            SampleDataType::Depth16(vec![])
+                            SampleDataType::Mono16(vec![])
                         } else {
-                            SampleDataType::Depth8(vec![])
+                            SampleDataType::Mono8(vec![])
                         }
                     };
                     let rn = ph.c4freq_to_relative_note(pcm.c2spd as f32);
