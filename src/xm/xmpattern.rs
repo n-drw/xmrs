@@ -8,7 +8,7 @@ use crate::module::Module;
 
 use super::xmpatternslot::XmPatternSlot;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct XmPatternHeader {
     pattern_header_len: u32,
     packing_type: u8,
@@ -28,6 +28,12 @@ impl Default for XmPatternHeader {
 }
 
 impl XmPatternHeader {
+    pub fn new(size : usize) -> Self {
+        let mut ph = XmPatternHeader::default();
+        ph.num_rows = size as u16;
+        ph
+    }
+
     pub fn load(data: &[u8]) -> Result<(&[u8], XmPatternHeader), DecodeError> {
         match bincode::serde::decode_from_slice::<XmPatternHeader, _>(
             data,
@@ -44,13 +50,20 @@ impl XmPatternHeader {
 
 type Lines = Vec<Vec<XmPatternSlot>>;
 
-#[derive(Default, Serialize, Deserialize, Debug)]
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct XmPattern {
     pub header: XmPatternHeader,
     pub pattern: Lines,
 }
 
 impl XmPattern {
+    pub fn new(rows: usize, noc: usize) -> Self {
+        Self {
+            header: XmPatternHeader::new(rows),
+            pattern: vec![vec![XmPatternSlot::default(); noc]; rows],
+        }
+    }
+
     pub fn load(data: &[u8], number_of_channels: u16) -> Result<(&[u8], XmPattern), DecodeError> {
         let (data, xmph) = XmPatternHeader::load(data)?;
         let (_data_out, xmps) = Self::get_slots(
