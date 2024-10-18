@@ -51,6 +51,7 @@ pub mod note;
 pub mod patternslot;
 /// Period Helper
 pub mod period_helper;
+pub(crate) mod period_helper_cache;
 /// Sample with Steroid
 pub mod sample;
 

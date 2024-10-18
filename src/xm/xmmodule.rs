@@ -35,12 +35,7 @@ impl XmModule {
 
         // Add empty patterns
         let empty_ones = pattern_order.len() - pattern.len();
-        let rows = if let Some(s) = pattern.last() {
-            s.pattern.len()
-        } else {
-            64 // default
-        };
-        let empty = XmPattern::new(rows, header.number_of_channels.into());
+        let empty = XmPattern::new(64, header.number_of_channels.into());
         pattern.extend(core::iter::repeat(empty).take(empty_ones));
 
         let mut instrument: Vec<XmInstrument> = vec![];

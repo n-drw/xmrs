@@ -7,6 +7,8 @@ use micromath::F32Ext;
 #[allow(unused_imports)]
 use num_traits::float::Float;
 
+use crate::period_helper_cache::PeriodHelperCache;
+
 /// Historical Frequencies to load old data. Default is Linear.
 #[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 pub enum FrequencyType {
@@ -24,6 +26,7 @@ impl Default for FrequencyType {
 pub struct PeriodHelper {
     pub freq_type: FrequencyType,
     historical: bool,
+    cache: PeriodHelperCache<10>,
 }
 
 impl Default for PeriodHelper {
@@ -31,6 +34,7 @@ impl Default for PeriodHelper {
         Self {
             freq_type: FrequencyType::LinearFrequencies,
             historical: false,
+            cache: PeriodHelperCache::new(),
         }
     }
 }
@@ -43,6 +47,7 @@ impl PeriodHelper {
         Self {
             freq_type,
             historical,
+            cache: PeriodHelperCache::new(),
         }
     }
 
@@ -176,7 +181,7 @@ impl PeriodHelper {
 
     //-----------------------------------------------------
 
-    // new adjust period to arpeggio and finetune delta
+    /// new adjust period to arpeggio and finetune delta
     pub fn adjust_period(&self, period: f32, arp_note: f32, finetune: f32, semitone: bool) -> f32 {
         let note_orig: f32 = self.period_to_note(period);
 
@@ -197,4 +202,28 @@ impl PeriodHelper {
             self.note_to_period(note + arp_note + finetune)
         }
     }
+
+    /// Do all the work in one pass. TODO:Add a dynamic cache here
+    pub fn all_to_frequency(&self, period: f32, arp_note: f32, finetune: f32, semitone: bool) -> f32 {
+        let period_adjusted = self.adjust_period(
+            period,
+            arp_note,
+            finetune,
+            semitone,
+        );
+        self.period_to_frequency(period_adjusted)
+    }
+
+    /// Same as all_to_frequency() with cache table
+    pub fn all_to_frequency_cached(&mut self, period: f32, arp_note: f32, finetune: f32, semitone: bool) -> f32 {
+        if let Some(cached_freq) = self.cache.get(period, arp_note, finetune, semitone) {
+            return cached_freq;
+        }
+        let f = self.all_to_frequency(period, arp_note, finetune, semitone);
+        self.cache.insert(period, arp_note, finetune, semitone, f);
+        f
+    }
+
+
+
 }
