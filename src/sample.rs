@@ -62,8 +62,13 @@ impl Sample {
         match &self.data {
             SampleDataType::Mono8(v) => (v[seek] as f32 / 128.0, v[seek] as f32 / 128.0),
             SampleDataType::Mono16(v) => (v[seek] as f32 / 32768.0, v[seek] as f32 / 32768.0),
-            SampleDataType::Stereo8(v) => (v[seek * 2] as f32 / 128.0, v[seek * 2 + 1] as f32 / 128.0),
-            SampleDataType::Stereo16(v) => (v[seek * 2] as f32 / 32768.0, v[seek * 2 + 1] as f32 / 32768.0),
+            SampleDataType::Stereo8(v) => {
+                (v[seek * 2] as f32 / 128.0, v[seek * 2 + 1] as f32 / 128.0)
+            }
+            SampleDataType::Stereo16(v) => (
+                v[seek * 2] as f32 / 32768.0,
+                v[seek * 2 + 1] as f32 / 32768.0,
+            ),
         }
     }
 

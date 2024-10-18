@@ -122,7 +122,10 @@ impl InstrHelper {
 
         if attack != 0 {
             let attack_frame = adr_frames[attack as usize];
-            point.push(EnvelopePoint { frame: 0, value: 0.0 });
+            point.push(EnvelopePoint {
+                frame: 0,
+                value: 0.0,
+            });
             seek += attack_frame;
             point.push(EnvelopePoint {
                 frame: attack_frame,

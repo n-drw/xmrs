@@ -203,19 +203,26 @@ impl PeriodHelper {
         }
     }
 
-    /// Do all the work in one pass. TODO:Add a dynamic cache here
-    pub fn all_to_frequency(&self, period: f32, arp_note: f32, finetune: f32, semitone: bool) -> f32 {
-        let period_adjusted = self.adjust_period(
-            period,
-            arp_note,
-            finetune,
-            semitone,
-        );
+    /// Do all the work in one pass.
+    pub fn all_to_frequency(
+        &self,
+        period: f32,
+        arp_note: f32,
+        finetune: f32,
+        semitone: bool,
+    ) -> f32 {
+        let period_adjusted = self.adjust_period(period, arp_note, finetune, semitone);
         self.period_to_frequency(period_adjusted)
     }
 
-    /// Same as all_to_frequency() with cache table
-    pub fn all_to_frequency_cached(&mut self, period: f32, arp_note: f32, finetune: f32, semitone: bool) -> f32 {
+    /// Same as all_to_frequency() with a small cache table
+    pub fn all_to_frequency_cached(
+        &mut self,
+        period: f32,
+        arp_note: f32,
+        finetune: f32,
+        semitone: bool,
+    ) -> f32 {
         if let Some(cached_freq) = self.cache.get(period, arp_note, finetune, semitone) {
             return cached_freq;
         }
@@ -223,7 +230,4 @@ impl PeriodHelper {
         self.cache.insert(period, arp_note, finetune, semitone, f);
         f
     }
-
-
-
 }

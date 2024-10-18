@@ -33,7 +33,13 @@ impl<const N: usize> PeriodHelperCache<N> {
         }
     }
 
-    pub fn get(&mut self, period: f32, arp_note: f32, finetune: f32, semitone: bool) -> Option<f32> {
+    pub fn get(
+        &mut self,
+        period: f32,
+        arp_note: f32,
+        finetune: f32,
+        semitone: bool,
+    ) -> Option<f32> {
         if self.access_counter >= usize::MAX - 1 {
             self.reset_counters();
         }
@@ -48,7 +54,14 @@ impl<const N: usize> PeriodHelperCache<N> {
         None
     }
 
-    pub fn insert(&mut self, period: f32, arp_note: f32, finetune: f32, semitone: bool, frequency: f32) {
+    pub fn insert(
+        &mut self,
+        period: f32,
+        arp_note: f32,
+        finetune: f32,
+        semitone: bool,
+        frequency: f32,
+    ) {
         if self.access_counter >= usize::MAX - 1 {
             self.reset_counters();
         }

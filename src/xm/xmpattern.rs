@@ -28,7 +28,7 @@ impl Default for XmPatternHeader {
 }
 
 impl XmPatternHeader {
-    pub fn new(size : usize) -> Self {
+    pub fn new(size: usize) -> Self {
         let mut ph = XmPatternHeader::default();
         ph.num_rows = size as u16;
         ph

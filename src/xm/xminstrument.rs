@@ -243,15 +243,13 @@ impl XmInstrument {
         let mut sample: Vec<XmSample> = vec![];
 
         // length
-        let xmih_len: usize = bincode::serde::decode_from_slice::<u32, _>(
-            data,
-            bincode::config::legacy(),
-        )?
-        .0 as usize;
+        let xmih_len: usize =
+            bincode::serde::decode_from_slice::<u32, _>(data, bincode::config::legacy())?.0
+                as usize;
 
         if xmih_len == 4 {
             // no data
-            return Ok((&data[4..], XmInstrument::default()))
+            return Ok((&data[4..], XmInstrument::default()));
         }
 
         // xmih
@@ -325,8 +323,10 @@ impl XmInstrument {
         }
 
         self.instrument_header_len = 4 + XMINSTRUMENT_HEADER_SIZE as u32 + 4 + i.len() as u32;
-        let mut instrument_header_len_v =
-            bincode::serde::encode_to_vec::<u32, _>(self.instrument_header_len, bincode::config::legacy())?;
+        let mut instrument_header_len_v = bincode::serde::encode_to_vec::<u32, _>(
+            self.instrument_header_len,
+            bincode::config::legacy(),
+        )?;
 
         self.header.num_samples = self.sample.len() as u16;
         let mut h = self.header.save()?;
