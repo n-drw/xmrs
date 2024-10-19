@@ -243,9 +243,13 @@ impl XmInstrument {
         let mut sample: Vec<XmSample> = vec![];
 
         // length
-        let xmih_len: usize =
-            bincode::serde::decode_from_slice::<u32, _>(data, bincode::config::legacy())?.0
-                as usize;
+        let xmih_len = if let Ok(len) =
+            bincode::serde::decode_from_slice::<u32, _>(data, bincode::config::legacy())
+        {
+            len.0 as usize
+        } else {
+            return Ok((&data, XmInstrument::default()));
+        };
 
         if xmih_len == 4 {
             // no data
