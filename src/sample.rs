@@ -72,6 +72,59 @@ impl Sample {
         }
     }
 
+    pub fn clamp(&mut self) {
+        self.volume = self.volume.clamp(0.0, 1.0);
+        self.panning = self.panning.clamp(0.0, 1.0);
+        self.finetune = self.finetune.clamp(-1.0, 1.0);
+        self.relative_note = self.relative_note.clamp(-95, 96);
+        if self.loop_start as usize > self.len() {
+            self.loop_start = 0;
+        }
+        if self.loop_start as usize + self.loop_length as usize > self.len() {
+            self.loop_length = self.len() as u32 - self.loop_start;
+        }
+    }
+
+    // return corrected position and sample.
+    pub fn meta_at(&self, pos: usize) -> Option<(usize, (f32, f32))> {
+        let len = self.len();
+        let loop_start = self.loop_start as usize;
+        let loop_length = self.loop_length as usize;
+        let loop_end = loop_start + loop_length;
+
+        match self.flags {
+            LoopType::No => {
+                if pos < len {
+                    return Some((pos, self.at(pos)));
+                } else {
+                    return None;
+                }
+            }
+            LoopType::Forward => {
+                let pos = if pos < loop_end {
+                    pos
+                } else {
+                    loop_start + (pos - loop_start) % loop_length
+                };
+                return Some((pos, self.at(pos)));
+            }
+            LoopType::PingPong => {
+                let pos = if pos < loop_end {
+                    pos
+                } else {
+                    let total_length = 2 * loop_length;
+                    let mod_pos = (pos - loop_start) % total_length;
+                    if mod_pos < loop_length {
+                        loop_start + mod_pos
+                    } else {
+                        loop_end - (mod_pos - loop_length) - 1
+                    }
+                };
+                return Some((pos, self.at(pos)));
+            }
+        }
+    }
+
     /// return sample size (8 or 16 bits)
     pub fn bits(&self) -> u8 {
         match &self.data {
