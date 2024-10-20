@@ -85,8 +85,8 @@ impl Sample {
         }
     }
 
-    // return corrected position and sample.
-    pub fn meta_at(&self, pos: usize) -> Option<(usize, (f32, f32))> {
+    /// returns the smallest possible abstract position and the actual position in the sample
+    pub fn meta_seek(&self, pos: usize) -> (usize, usize) {
         let len = self.len();
         let loop_start = self.loop_start as usize;
         let loop_length = self.loop_length as usize;
@@ -95,9 +95,9 @@ impl Sample {
         match self.flags {
             LoopType::No => {
                 if pos < len {
-                    return Some((pos, self.at(pos)));
+                    return (pos, pos);
                 } else {
-                    return None;
+                    return (len - 1, len - 1);
                 }
             }
             LoopType::Forward => {
@@ -106,21 +106,23 @@ impl Sample {
                 } else {
                     loop_start + (pos - loop_start) % loop_length
                 };
-                return Some((pos, self.at(pos)));
+                return (pos, pos);
             }
             LoopType::PingPong => {
-                let pos = if pos < loop_end {
-                    pos
+                let (good_pos, pos) = if pos < loop_end {
+                    (pos, pos)
                 } else {
                     let total_length = 2 * loop_length;
                     let mod_pos = (pos - loop_start) % total_length;
                     if mod_pos < loop_length {
-                        loop_start + mod_pos
+                        let pos = loop_start + mod_pos;
+                        (pos, pos)
                     } else {
-                        loop_end - (mod_pos - loop_length) - 1
+                        let pos = loop_end - (mod_pos - loop_length) - 1;
+                        (loop_start + mod_pos, pos)
                     }
                 };
-                return Some((pos, self.at(pos)));
+                return (good_pos, pos);
             }
         }
     }
