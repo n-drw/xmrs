@@ -21,6 +21,7 @@ pub enum SampleDataType {
     Mono16(Vec<i16>),
     Stereo8(Vec<i8>),
     Stereo16(Vec<i16>),
+    StereoFloat(Vec<f32>),
 }
 
 /// A Real Data sample
@@ -54,6 +55,7 @@ impl Sample {
             SampleDataType::Mono16(v) => v.len(),
             SampleDataType::Stereo8(v) => v.len() / 2,
             SampleDataType::Stereo16(v) => v.len() / 2,
+            SampleDataType::StereoFloat(v) => v.len() / 2,
         }
     }
 
@@ -69,6 +71,7 @@ impl Sample {
                 v[seek * 2] as f32 / 32768.0,
                 v[seek * 2 + 1] as f32 / 32768.0,
             ),
+            SampleDataType::StereoFloat(v) => (v[seek * 2], v[seek * 2 + 1]),
         }
     }
 
@@ -85,8 +88,8 @@ impl Sample {
         }
     }
 
-    /// returns the smallest possible abstract position and the actual position in the sample
-    pub fn meta_seek(&self, pos: usize) -> (usize, usize) {
+    /// returns the real position in the sample
+    pub fn meta_seek(&self, pos: usize) -> usize {
         let len = self.len();
         let loop_start = self.loop_start as usize;
         let loop_length = self.loop_length as usize;
@@ -95,34 +98,30 @@ impl Sample {
         match self.flags {
             LoopType::No => {
                 if pos < len {
-                    return (pos, pos);
+                    return pos;
                 } else {
-                    return (len - 1, len - 1);
+                    return len - 1;
                 }
             }
             LoopType::Forward => {
-                let pos = if pos < loop_end {
-                    pos
+                if pos < loop_end {
+                    return pos;
                 } else {
-                    loop_start + (pos - loop_start) % loop_length
-                };
-                return (pos, pos);
+                    return loop_start + (pos - loop_start) % loop_length;
+                }
             }
             LoopType::PingPong => {
-                let (good_pos, pos) = if pos < loop_end {
-                    (pos, pos)
+                if pos < loop_end {
+                    return pos;
                 } else {
                     let total_length = 2 * loop_length;
                     let mod_pos = (pos - loop_start) % total_length;
                     if mod_pos < loop_length {
-                        let pos = loop_start + mod_pos;
-                        (pos, pos)
+                        return loop_start + mod_pos;
                     } else {
-                        let pos = loop_end - (mod_pos - loop_length) - 1;
-                        (loop_start + mod_pos, pos)
+                        return loop_end - (mod_pos - loop_length) - 1;
                     }
-                };
-                return (good_pos, pos);
+                }
             }
         }
     }
@@ -134,6 +133,8 @@ impl Sample {
             SampleDataType::Mono16(_) => 16,
             SampleDataType::Stereo8(_) => 8,
             SampleDataType::Stereo16(_) => 16,
+            SampleDataType::StereoFloat(_) => 32,
+
         }
     }
 }
