@@ -171,6 +171,7 @@ impl XmSample {
                     SampleDataType::Mono16(d) => 2 * d.len() as u32,
                     SampleDataType::Stereo8(d) => 2 * d.len() as u32,
                     SampleDataType::Stereo16(d) => 2 * 2 * d.len() as u32,
+                    SampleDataType::StereoFloat(d) => 4 * 2 * d.len() as u32,
                 };
                 xms.header.loop_start = loop_start;
                 xms.header.loop_length = loop_length;
