@@ -114,7 +114,7 @@ impl PatternHelper {
                 } else {
                     n
                 };
-                current.note = (1 + note).try_into().unwrap();
+                current.note = note.try_into().unwrap();
             }
 
             // FIXME: last high bit from last byte is a bool about reset effect

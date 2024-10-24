@@ -149,8 +149,14 @@ impl AmigaModule {
         for row in p {
             let mut new_row: Row = vec![];
             for e in row {
+                let note: Note = if e.note == 0 {
+                    Note::None
+                } else {
+                    Note::try_from(e.note - 1).unwrap_or(Note::None)
+                };
+
                 let ps = PatternSlot {
-                    note: Note::try_from(e.note).unwrap_or(Note::None),
+                    note,
                     instrument: e.instrument,
                     volume: 0,
                     effect_type: e.effect,

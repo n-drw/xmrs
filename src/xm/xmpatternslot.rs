@@ -73,8 +73,11 @@ impl XmPatternSlot {
                     if dst[0] == 97 {
                         // Special case: we don't want to use 97, because we want more octaves...
                         Note::KeyOff
+                    } else if dst[0] == 0 {
+                        // Special case: we don't want to use 0, because we want full MIDI compatibility...
+                        Note::None
                     } else {
-                        match Note::try_from(dst[0]) {
+                        match Note::try_from(dst[0] - 1) {
                             Ok(n) => n,
                             Err(_e) => Note::None,
                         }
@@ -94,7 +97,7 @@ impl XmPatternSlot {
             if self.note.is_keyoff() {
                 97
             } else {
-                self.note.into()
+                self.note.value() + 1
             }
         };
         bytes[1] = self.instrument;
@@ -110,7 +113,7 @@ impl XmPatternSlot {
             if self.note.is_keyoff() {
                 97
             } else {
-                self.note.into()
+                self.note.value() + 1
             }
         };
         bytes[1] = self.instrument;

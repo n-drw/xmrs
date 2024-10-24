@@ -462,7 +462,7 @@ impl S3mModule {
                     254 => Note::KeyOff,
                     255 => Note::None,
                     _ => {
-                        let tmp_note = 1 + (note & 0xF) + (note >> 4) * 12;
+                        let tmp_note = (note & 0xF) + (note >> 4) * 12;
                         if tmp_note > 96 {
                             Note::None
                         } else {
