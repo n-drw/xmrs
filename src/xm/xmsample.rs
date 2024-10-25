@@ -22,7 +22,7 @@ pub struct XmSampleHeader {
     finetune: i8,
     flags: u8,
     panning: u8,
-    relative_note: i8,
+    relative_pitch: i8,
     reserved: u8,
     #[serde(
         deserialize_with = "deserialize_string_22",
@@ -148,7 +148,7 @@ impl XmSample {
                 _ => LoopType::No,
             },
             panning: self.header.panning as f32 / 255.0,
-            relative_note: self.header.relative_note,
+            relative_pitch: self.header.relative_pitch,
             data: data,
         }
     }
@@ -179,7 +179,7 @@ impl XmSample {
                 xms.header.finetune = (s.finetune * 127.0) as i8;
                 xms.header.flags = s.flags.into();
                 xms.header.panning = (s.panning * 255.0) as u8;
-                xms.header.relative_note = s.relative_note;
+                xms.header.relative_pitch = s.relative_pitch;
                 xms.header.name = s.name.clone();
                 xms.data = Some(s.data.clone());
                 output.push(xms);

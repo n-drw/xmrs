@@ -78,7 +78,7 @@ impl AmigaSample {
             finetune: f,
             flags: flag,
             panning: 0.5,
-            relative_note: 0,
+            relative_pitch: 0,
             data: crate::prelude::SampleDataType::Mono8(vec![]),
         }
     }

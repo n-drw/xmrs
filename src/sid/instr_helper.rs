@@ -40,7 +40,7 @@ impl InstrHelper {
             finetune: 0.0,
             flags,
             panning: 0.5,
-            relative_note: 0, // C-4
+            relative_pitch: 0, // C-4
             data,
         }
     }
@@ -176,7 +176,7 @@ impl InstrHelper {
 
         //FIXME: instr.sample = ...;
         let mut s: Sample = Self::sid_to_sample(&sid);
-        s.relative_note = 24;
+        s.relative_pitch = 24;
         instr.sample = vec![s];
 
         instr

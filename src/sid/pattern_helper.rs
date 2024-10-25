@@ -125,7 +125,7 @@ impl PatternHelper {
             // };
 
             if release {
-                if current.note == Note::None {
+                if current.note == Pitch::None {
                     // current.note = Note::KeyOff;
                     // FIXME: Hack, KeyOff currently forget instrument value?
                     current.volume = 0x10;

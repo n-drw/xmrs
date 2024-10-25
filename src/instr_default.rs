@@ -12,7 +12,7 @@ use alloc::{vec, vec::Vec};
 #[derive(Serialize, Deserialize, Debug)]
 pub struct InstrDefault {
     #[serde(with = "BigArray")]
-    pub sample_for_note: [u8; 96],
+    pub sample_for_pitch: [u8; 120],
     pub volume_envelope: Envelope,  // Envelope.points[].value: 0.0..1.0
     pub panning_envelope: Envelope, // Envelope.points[].value: 0.0..1.0
     pub vibrato: InstrVibrato,
@@ -25,7 +25,7 @@ pub struct InstrDefault {
 impl Default for InstrDefault {
     fn default() -> Self {
         Self {
-            sample_for_note: [0; 96],
+            sample_for_pitch: [0; 120],
             volume_envelope: Envelope::default(),
             panning_envelope: Envelope::default(),
             vibrato: InstrVibrato::default(),

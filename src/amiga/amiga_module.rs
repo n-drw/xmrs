@@ -149,10 +149,10 @@ impl AmigaModule {
         for row in p {
             let mut new_row: Row = vec![];
             for e in row {
-                let note: Note = if e.note == 0 {
-                    Note::None
+                let note: Pitch = if e.note == 0 {
+                    Pitch::None
                 } else {
-                    Note::try_from(e.note - 1).unwrap_or(Note::None)
+                    Pitch::try_from(e.note - 1).unwrap_or(Pitch::None)
                 };
 
                 let ps = PatternSlot {

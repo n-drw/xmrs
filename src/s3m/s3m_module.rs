@@ -240,9 +240,9 @@ impl S3mOplInstr {
         i_opl.element.modulator_wave_select = self.mod8;
         i_opl.element.carrier_wave_select = self.car9;
         i_opl.volume = self.volume;
-        let rn = ph.c4freq_to_relative_note(self.c2spd as f32);
+        let rn = ph.c4freq_to_relative_pitch(self.c2spd as f32);
         i_opl.finetune = rn.1;
-        i_opl.relative_note = rn.0;
+        i_opl.relative_pitch = rn.0;
 
         return i_opl;
     }
@@ -459,14 +459,14 @@ impl S3mModule {
             if k < packed_data.len() {
                 let note = packed_data[k];
                 slot.note = match note {
-                    254 => Note::KeyOff,
-                    255 => Note::None,
+                    254 => Pitch::KeyOff,
+                    255 => Pitch::None,
                     _ => {
-                        let tmp_note = (note & 0xF) + (note >> 4) * 12;
-                        if tmp_note > 96 {
-                            Note::None
+                        let tmp_pitch = (note & 0xF) + (note >> 4) * 12;
+                        if tmp_pitch > 96 {
+                            Pitch::None
                         } else {
-                            Note::try_from(tmp_note).unwrap()
+                            Pitch::try_from(tmp_pitch).unwrap()
                         }
                     }
                 };
@@ -532,7 +532,7 @@ impl S3mModule {
                             SampleDataType::Mono8(vec![])
                         }
                     };
-                    let rn = ph.c4freq_to_relative_note(pcm.c2spd as f32);
+                    let rn = ph.c4freq_to_relative_pitch(pcm.c2spd as f32);
                     let sample = Sample {
                         name: s3m_meta_instr.filename.clone(),
                         loop_start: pcm.loop_start,
@@ -545,7 +545,7 @@ impl S3mModule {
                             LoopType::No
                         },
                         panning: 0.5,
-                        relative_note: rn.0,
+                        relative_pitch: rn.0,
                         data: data,
                     };
 

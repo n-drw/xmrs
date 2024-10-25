@@ -206,13 +206,13 @@ impl S3mEffect {
                     0xD => {
                         // Note Delay
                         n.effect_parameter |= 0xD0;
-                        if let Note::None = n.note {
+                        if let Pitch::None = n.note {
                             // EDx without a note does nothing in ST3 but retrigs in FT2, remove effect
                             n.effect_type = 0;
                             n.effect_parameter = 0;
                         } else if n.effect_parameter == 0xD0 {
                             // ED0 prevents note/smp/vol from updating in ST3, remove everything
-                            n.note = Note::None;
+                            n.note = Pitch::None;
                             n.instrument = 0;
                             n.volume = 0;
                             n.effect_type = 0;

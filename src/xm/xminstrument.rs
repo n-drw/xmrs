@@ -41,7 +41,7 @@ pub const XMINSTRDEFAULT_SIZE: usize = 96 + 4 * 12 + 4 * 12 + 14 + 2 + 2 + 2 + 2
 #[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 pub struct XmInstrDefault {
     #[serde(with = "BigArray")]
-    sample_for_notes: [u8; 96],
+    sample_for_pitchs: [u8; 96],
 
     #[serde(with = "BigArray")]
     volume_envelope: [u8; 4 * 12],
@@ -75,7 +75,7 @@ pub struct XmInstrDefault {
 impl Default for XmInstrDefault {
     fn default() -> Self {
         Self {
-            sample_for_notes: [0; 96],
+            sample_for_pitchs: [0; 96],
             volume_envelope: [0; 4 * 12],
             panning_envelope: [0; 4 * 12],
             number_of_volume_points: 0,
@@ -125,7 +125,7 @@ impl XmInstrDefault {
         let mut xmid: Box<Self> = Box::default();
         match &i.instr_type {
             InstrumentType::Default(id) => {
-                xmid.sample_for_notes = id.sample_for_note.clone().try_into().unwrap();
+                xmid.sample_for_pitchs.copy_from_slice(&id.sample_for_pitch[..96]);
 
                 xmid.volume_envelope = Self::from_envelope(&id.volume_envelope);
                 xmid.number_of_volume_points = id.volume_envelope.point.len() as u8;
@@ -392,8 +392,10 @@ impl XmInstrument {
                 } else {
                     0
                 };
+                let mut sample_for_pitch: [u8; 120]= [0; 120];
+                sample_for_pitch[..96].copy_from_slice(&xmi.sample_for_pitchs);
                 let mut id = InstrDefault {
-                    sample_for_note: xmi.sample_for_notes,
+                    sample_for_pitch,
                     volume_envelope: Self::envelope_from_slice(&xmi.volume_envelope[0..num_vol_pt])
                         .unwrap(),
                     panning_envelope: Self::envelope_from_slice(
@@ -439,9 +441,9 @@ impl XmInstrument {
 
                 // cleanup bad sample for notes
                 let sample_qty = id.sample.len();
-                for i in 0..id.sample_for_note.len() {
-                    if id.sample_for_note[i] as usize >= sample_qty {
-                        id.sample_for_note[i] = 0;
+                for i in 0..id.sample_for_pitch.len() {
+                    if id.sample_for_pitch[i] as usize >= sample_qty {
+                        id.sample_for_pitch[i] = 0;
                     }
                 }
 

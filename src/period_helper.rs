@@ -55,7 +55,7 @@ impl PeriodHelper {
 
     /// return period
     #[inline(always)]
-    fn linear_note_to_period(note: f32) -> f32 {
+    fn linear_pitch_to_period(note: f32) -> f32 {
         // 10.0: number of octaves
         // 12.0: halftones
         // 16.0: number of finetune steps
@@ -65,7 +65,7 @@ impl PeriodHelper {
 
     /// return note
     #[inline(always)]
-    fn linear_period_to_note(period: f32) -> f32 {
+    fn linear_period_to_pitch(period: f32) -> f32 {
         (10.0 * 12.0 * 16.0 * 4.0 - period) / (16.0 * 4.0)
     }
 
@@ -91,14 +91,14 @@ impl PeriodHelper {
 
     /// return period
     #[inline(always)]
-    fn amiga_note_to_period(note: f32) -> f32 {
+    fn amiga_pitch_to_period(note: f32) -> f32 {
         /* found using scipy.optimize.curve_fit */
         6848.0 * (-0.0578 * note).exp() + 0.2782
     }
 
     /// return note
     #[inline(always)]
-    fn amiga_period_to_note(period: f32) -> f32 {
+    fn amiga_period_to_pitch(period: f32) -> f32 {
         -f32::ln((period - 0.2782) / 6848.0) / 0.0578
     }
 
@@ -128,15 +128,15 @@ impl PeriodHelper {
 
     pub fn note_to_period(&self, note: f32) -> f32 {
         match self.freq_type {
-            FrequencyType::LinearFrequencies => Self::linear_note_to_period(note),
-            FrequencyType::AmigaFrequencies => Self::amiga_note_to_period(note),
+            FrequencyType::LinearFrequencies => Self::linear_pitch_to_period(note),
+            FrequencyType::AmigaFrequencies => Self::amiga_pitch_to_period(note),
         }
     }
 
-    pub fn period_to_note(&self, period: f32) -> f32 {
+    pub fn period_to_pitch(&self, period: f32) -> f32 {
         match self.freq_type {
-            FrequencyType::LinearFrequencies => Self::linear_period_to_note(period),
-            FrequencyType::AmigaFrequencies => Self::amiga_period_to_note(period),
+            FrequencyType::LinearFrequencies => Self::linear_period_to_pitch(period),
+            FrequencyType::AmigaFrequencies => Self::amiga_period_to_pitch(period),
         }
         .max(0.0) // Remove < 0.0 and NaN numbers
     }
@@ -156,11 +156,11 @@ impl PeriodHelper {
     }
 
     /// returns C-4 frequency from relative note and finetune
-    pub fn relative_note_to_c4freq(&self, relative_note: f32, finetune: f32) -> Option<f32> {
+    pub fn relative_pitch_to_c4freq(&self, relative_pitch: f32, finetune: f32) -> Option<f32> {
         const NOTE_C4: f32 = 4.0 * 12.0;
         const NOTE_B9: f32 = 10.0 * 12.0 - 1.0;
 
-        let note = NOTE_C4 + relative_note;
+        let note = NOTE_C4 + relative_pitch;
         if note < 0.0 || note > NOTE_B9 {
             return None;
         }
@@ -169,21 +169,21 @@ impl PeriodHelper {
     }
 
     /// return relative note and finetune
-    pub fn c4freq_to_relative_note(&self, freq: f32) -> (i8, f32) {
+    pub fn c4freq_to_relative_pitch(&self, freq: f32) -> (i8, f32) {
         const NOTE_C4: f32 = 4.0 * 12.0;
         let period = self.frequency_to_period(freq);
-        let note = self.period_to_note(period);
+        let note = self.period_to_pitch(period);
         let note_ceil = note.ceil();
-        let relative_note = note_ceil - NOTE_C4;
+        let relative_pitch = note_ceil - NOTE_C4;
         let finetune = note - note_ceil;
-        (relative_note as i8, finetune)
+        (relative_pitch as i8, finetune)
     }
 
     //-----------------------------------------------------
 
     /// new adjust period to arpeggio and finetune delta
-    pub fn adjust_period(&self, period: f32, arp_note: f32, finetune: f32, semitone: bool) -> f32 {
-        let note_orig: f32 = self.period_to_note(period);
+    pub fn adjust_period(&self, period: f32, arp_pitch: f32, finetune: f32, semitone: bool) -> f32 {
+        let note_orig: f32 = self.period_to_pitch(period);
 
         let note = if semitone {
             note_orig.round()
@@ -191,15 +191,15 @@ impl PeriodHelper {
             note_orig
         };
 
-        if self.historical && arp_note != 0.0 {
+        if self.historical && arp_pitch != 0.0 {
             // From C-0 (0) to B-7 (95) only
             let mut note = note;
             if note.ceil() >= 95.0 {
                 note = 95.0;
             }
-            self.note_to_period(note + arp_note + finetune)
+            self.note_to_period(note + arp_pitch + finetune)
         } else {
-            self.note_to_period(note + arp_note + finetune)
+            self.note_to_period(note + arp_pitch + finetune)
         }
     }
 
@@ -207,11 +207,11 @@ impl PeriodHelper {
     pub fn all_to_frequency(
         &self,
         period: f32,
-        arp_note: f32,
+        arp_pitch: f32,
         finetune: f32,
         semitone: bool,
     ) -> f32 {
-        let period_adjusted = self.adjust_period(period, arp_note, finetune, semitone);
+        let period_adjusted = self.adjust_period(period, arp_pitch, finetune, semitone);
         self.period_to_frequency(period_adjusted)
     }
 
@@ -219,15 +219,15 @@ impl PeriodHelper {
     pub fn all_to_frequency_cached(
         &mut self,
         period: f32,
-        arp_note: f32,
+        arp_pitch: f32,
         finetune: f32,
         semitone: bool,
     ) -> f32 {
-        if let Some(cached_freq) = self.cache.get(period, arp_note, finetune, semitone) {
+        if let Some(cached_freq) = self.cache.get(period, arp_pitch, finetune, semitone) {
             return cached_freq;
         }
-        let f = self.all_to_frequency(period, arp_note, finetune, semitone);
-        self.cache.insert(period, arp_note, finetune, semitone, f);
+        let f = self.all_to_frequency(period, arp_pitch, finetune, semitone);
+        self.cache.insert(period, arp_pitch, finetune, semitone, f);
         f
     }
 }

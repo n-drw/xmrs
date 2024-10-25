@@ -1,4 +1,4 @@
-use crate::note::Note;
+use crate::pitch::Pitch;
 use crate::patternslot::PatternSlot;
 /// Original XM Pattern Slot
 use bincode::error::DecodeError;
@@ -72,14 +72,14 @@ impl XmPatternSlot {
                 note: {
                     if dst[0] == 97 {
                         // Special case: we don't want to use 97, because we want more octaves...
-                        Note::KeyOff
+                        Pitch::KeyOff
                     } else if dst[0] == 0 {
                         // Special case: we don't want to use 0, because we want full MIDI compatibility...
-                        Note::None
+                        Pitch::None
                     } else {
-                        match Note::try_from(dst[0] - 1) {
+                        match Pitch::try_from(dst[0] - 1) {
                             Ok(n) => n,
-                            Err(_e) => Note::None,
+                            Err(_e) => Pitch::None,
                         }
                     }
                 },

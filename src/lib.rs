@@ -46,7 +46,7 @@ pub mod instrument;
 /// SoundTracker Module with Steroid
 pub mod module;
 /// A typical Note
-pub mod note;
+pub mod pitch;
 /// A typical pattern slot
 pub mod patternslot;
 /// Period Helper

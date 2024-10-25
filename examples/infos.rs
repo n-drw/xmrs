@@ -46,7 +46,7 @@ fn main() -> Result<(), std::io::Error> {
                                 println!("empty");
                             }
                             InstrumentType::Default(i) => {
-                                println!("sample_for_note: {:?}", i.sample_for_note);
+                                println!("sample_for_pitch: {:?}", i.sample_for_pitch);
                                 println!("volume_envelope: {:?}", i.volume_envelope);
                                 println!("panning_envelope: {:?}", i.panning_envelope);
                                 println!("vibrato: {:?}", i.vibrato);
@@ -59,7 +59,7 @@ fn main() -> Result<(), std::io::Error> {
                                     println!("volume: {}", is.volume);
                                     println!("finetune: {}", is.finetune);
                                     println!("flags: {:?}", is.flags);
-                                    println!("relative_note: {}", is.relative_note);
+                                    println!("relative_pitch: {}", is.relative_pitch);
                                 }
                                 println!("midi: {:?}", i.midi);
                                 println!("midi_mute: {}", i.midi_mute_computer);

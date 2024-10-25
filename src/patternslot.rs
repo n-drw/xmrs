@@ -1,4 +1,4 @@
-use crate::note::Note;
+use crate::pitch::Pitch;
 use alloc::format;
 use alloc::string::ToString;
 use core::fmt::*;
@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Copy, Clone, Eq, Hash, PartialEq)]
 #[repr(C)]
 pub struct PatternSlot {
-    pub note: Note,
+    pub note: Pitch,
     /// 0: none, 1-128
     pub instrument: u8,
     /// 0..64, 255
@@ -20,7 +20,7 @@ pub struct PatternSlot {
 impl Default for PatternSlot {
     fn default() -> Self {
         PatternSlot {
-            note: Note::None,
+            note: Pitch::None,
             instrument: 0,
             volume: 0,
             effect_type: 0,
@@ -59,11 +59,11 @@ impl PatternSlot {
         self.effect_type == 0 && self.effect_parameter != 0
     }
 
-    pub fn has_note_delay(&self) -> bool {
+    pub fn has_delay(&self) -> bool {
         self.effect_type == 0xE && (self.effect_parameter >> 4) == 0xD
     }
 
-    pub fn has_retrigger_note_empty(&self) -> bool {
+    pub fn has_retrigger_empty(&self) -> bool {
         self.effect_type == 0xE && self.effect_parameter == 0x90
     }
     pub fn has_tone_portamento(&self) -> bool {

@@ -42,7 +42,7 @@ pub struct Sample {
     /// [0..1] <=> [left..right]
     pub panning: f32,
     /// [-96..95] with 0 <=> C-4
-    pub relative_note: i8,
+    pub relative_pitch: i8,
     /// wave data
     pub data: SampleDataType,
 }
@@ -79,7 +79,7 @@ impl Sample {
         self.volume = self.volume.clamp(0.0, 1.0);
         self.panning = self.panning.clamp(0.0, 1.0);
         self.finetune = self.finetune.clamp(-1.0, 1.0);
-        self.relative_note = self.relative_note.clamp(-95, 96);
+        self.relative_pitch = self.relative_pitch.clamp(-95, 96);
         if self.loop_start as usize > self.len() {
             self.loop_start = 0;
         }

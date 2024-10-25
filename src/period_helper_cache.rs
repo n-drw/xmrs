@@ -36,7 +36,7 @@ impl<const N: usize> PeriodHelperCache<N> {
     pub fn get(
         &mut self,
         period: f32,
-        arp_note: f32,
+        arp_pitch: f32,
         finetune: f32,
         semitone: bool,
     ) -> Option<f32> {
@@ -45,7 +45,7 @@ impl<const N: usize> PeriodHelperCache<N> {
         }
 
         for entry in &mut self.entries {
-            if entry.key == (period, arp_note, finetune, semitone) {
+            if entry.key == (period, arp_pitch, finetune, semitone) {
                 self.access_counter += 1;
                 entry.last_used = self.access_counter;
                 return Some(entry.value);
@@ -57,7 +57,7 @@ impl<const N: usize> PeriodHelperCache<N> {
     pub fn insert(
         &mut self,
         period: f32,
-        arp_note: f32,
+        arp_pitch: f32,
         finetune: f32,
         semitone: bool,
         frequency: f32,
@@ -78,7 +78,7 @@ impl<const N: usize> PeriodHelperCache<N> {
 
         self.access_counter += 1;
         self.entries[lru_index] = CacheEntry {
-            key: (period, arp_note, finetune, semitone),
+            key: (period, arp_pitch, finetune, semitone),
             value: frequency,
             last_used: self.access_counter,
         };
