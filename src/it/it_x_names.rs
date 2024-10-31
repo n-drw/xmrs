@@ -5,30 +5,38 @@ use serde::Deserialize;
 
 #[derive(Deserialize, Debug, Default)]
 #[repr(C)]
-struct ItXNames;
+pub struct ItXNames;
 
 impl ItXNames {
-    pub fn load(source: &[u8]) -> (Vec<String>, usize) {
+    pub fn load(source: &[u8], chunk_size: usize) -> (Vec<String>, usize) {
         let data = source;
 
-        let length: u16 = u16::from_le_bytes(data[0..2].try_into().unwrap());
+        let length = u32::from_le_bytes(data[0..4].try_into().unwrap());
         if length == 0 {
-            return (vec![], 2);
+            return (vec![], 4);
         }
+        let data = &data[4..4 + length as usize];
+        // let dest: Vec<String> = data.chunks(chunk_size).map(|chunk| String::from_utf8_lossy(chunk).trim().to_string()).collect();
 
-        let total_size = 32 * length as usize;
-        let data = &data[2..total_size];
-
-        let vec_u8: Vec<[u8; 32]> =
-            bincode::decode_from_slice::<Vec<[u8; 32]>, _>(data, bincode::config::legacy())
-                .unwrap()
-                .0;
-
-        let vec_string: Vec<String> = vec_u8
-            .iter()
-            .map(|arr| String::from_utf8_lossy(arr).to_string())
+        let dest: Vec<String> = data
+            .chunks(chunk_size)
+            .map(|chunk| {
+                chunk
+                    .iter()
+                    .map(|&byte| if byte == 0x00 { 0x20 } else { byte }) // Remplace 0x00 par 0x20
+                    .collect::<Vec<u8>>() // Collecte dans un Vec<u8>
+            })
+            .map(|chunk| String::from_utf8_lossy(&chunk).trim().to_string()) // Convertit chaque chunk en String
             .collect();
 
-        (vec_string, 2 + total_size)
+        (dest, 4 + length as usize)
+    }
+
+    pub fn is_pnam(data: &[u8]) -> bool {
+        data[0] == b'P' && data[1] == b'N' && data[2] == b'A' && data[3] == b'M'
+    }
+
+    pub fn is_cnam(data: &[u8]) -> bool {
+        data[0] == b'C' && data[1] == b'N' && data[2] == b'A' && data[3] == b'M'
     }
 }

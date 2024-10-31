@@ -93,6 +93,10 @@ pub struct ItHeader {
 }
 
 impl ItHeader {
+    pub fn is_it_header(&self) -> bool {
+        self.id[0] == b'I' && self.id[1] == b'M' && self.id[2] == b'P' && self.id[3] == b'M'
+    }
+
     /// Mod Plug file?
     pub fn is_ompt(&self) -> bool {
         self.reserved[0] == b'O'
@@ -103,5 +107,69 @@ impl ItHeader {
 
     pub fn is_post20(&self) -> bool {
         (self.created_with_tracker >> 8) >= 2
+    }
+
+    /// Configuration Flags
+
+    /// Bit 0: Checks if Stereo is on.
+    pub fn is_stereo(&self) -> bool {
+        (self.flags & (1 << 0)) != 0
+    }
+
+    /// Bit 1: Checks if Mixing is on (obsolete).
+    pub fn is_mixing(&self) -> bool {
+        (self.flags & (1 << 1)) != 0
+    }
+
+    /// Bit 2: Checks if Instruments are used.
+    pub fn is_instruments_used(&self) -> bool {
+        (self.flags & (1 << 2)) != 0
+    }
+
+    /// Bit 3: Checks if Linear slides are used.
+    pub fn is_linear_slides(&self) -> bool {
+        (self.flags & (1 << 3)) != 0
+    }
+
+    /// Bit 4: Checks if Old effects are used.
+    pub fn is_old_effects(&self) -> bool {
+        (self.flags & (1 << 4)) != 0
+    }
+
+    /// Bit 5: Checks if G effect is linked with E and F memory.
+    pub fn is_g_linked_with_e_f(&self) -> bool {
+        (self.flags & (1 << 5)) != 0
+    }
+
+    /// Bit 6: Checks if MIDI pitch is controlled.
+    pub fn is_midi_pitch_controlled(&self) -> bool {
+        (self.flags & (1 << 6)) != 0
+    }
+
+    /// Bit 7: Checks if Embedded MIDI Macros are requested.
+    pub fn is_embedded_midi_macros(&self) -> bool {
+        (self.flags & (1 << 7)) != 0
+    }
+
+    /// Special Configuration Flags
+
+    /// Bit 0: Checks if Song message is attached.
+    pub fn is_song_message_attached(&self) -> bool {
+        (self.special_flags & (1 << 0)) != 0
+    }
+
+    /// Bit 1: Checks if Edit history is embedded.
+    pub fn is_edit_history_embedded(&self) -> bool {
+        (self.special_flags & (1 << 1)) != 0
+    }
+
+    /// Bit 2: Checks if Highlight is embedded.
+    pub fn is_highlight_embedded(&self) -> bool {
+        (self.special_flags & (1 << 2)) != 0
+    }
+
+    /// Bit 3: Checks if Embedded MIDI Macro is present.
+    pub fn is_embedded_midi_macro(&self) -> bool {
+        (self.special_flags & (1 << 3)) != 0
     }
 }

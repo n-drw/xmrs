@@ -232,6 +232,23 @@ pub enum ItInstrument {
 }
 
 impl ItInstrument {
+    pub fn is_it_instrument(&self) -> bool {
+        match self {
+            ItInstrument::Pre2(i) => {
+                i.instr.id[0] == b'I'
+                    && i.instr.id[1] == b'M'
+                    && i.instr.id[2] == b'P'
+                    && i.instr.id[3] == b'I'
+            }
+            ItInstrument::Post2(i) => {
+                i.instr.id[0] == b'I'
+                    && i.instr.id[1] == b'M'
+                    && i.instr.id[2] == b'P'
+                    && i.instr.id[3] == b'I'
+            }
+        }
+    }
+
     pub fn load_post2(source: &[u8]) -> Self {
         let mut data = source;
 

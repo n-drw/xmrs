@@ -5,24 +5,26 @@ use bincode::error::DecodeError;
 use alloc::string::{String, ToString};
 use alloc::vec;
 use alloc::vec::Vec;
-use serde::Deserialize;
 
 use super::it_edit_history::{ItEditHistory, ItEditHistoryEntry};
 use super::it_header::ItHeader;
 use super::it_instrument::ItInstrument;
 use super::it_midi_macros::ItMidiMacros;
 use super::it_pattern::ItPattern;
+use super::it_plugins::Plugins;
 use super::it_sample_header::ItSampleHeader;
+use super::it_x_names::ItXNames;
 
-#[derive(Deserialize, Debug)]
+#[derive(Debug)]
 #[repr(C)]
 pub struct ItModule {
     header: ItHeader,
     orders: Vec<u8>,
     edit_history: Option<Vec<ItEditHistoryEntry>>,
     midi_macros: Option<ItMidiMacros>,
-    // pattern_names: Vec<String>,
-    // channel_names: Vec<String>,
+    pattern_names: Vec<String>,
+    channel_names: Vec<String>,
+    plugins: Plugins,
     message: String,
     instruments: Vec<ItInstrument>,
     samples_header: Vec<ItSampleHeader>,
@@ -33,6 +35,8 @@ pub struct ItModule {
 impl ItModule {
     pub fn load(ser_it_module: &[u8]) -> Result<Self, DecodeError> {
         let data = ser_it_module;
+
+        // === ItHeader =====================================================
 
         let header = if let Ok(ith) =
             bincode::serde::decode_from_slice::<ItHeader, _>(data, bincode::config::legacy())
@@ -45,8 +49,12 @@ impl ItModule {
         };
         let data = &data[header.1..];
 
+        // === Orders =======================================================
+
         let orders = &data[..header.0.order_number as usize];
         let data = &data[header.0.order_number as usize..];
+
+        // === Instruments Offsets ==========================================
 
         let instrument_offsets_u8 = &data[..4 * header.0.instrument_number as usize];
         let instrument_offsets: Vec<u32> = instrument_offsets_u8
@@ -58,6 +66,8 @@ impl ItModule {
             .unwrap();
         let data = &data[4 * header.0.instrument_number as usize..];
 
+        // === Samples Header Offsets =======================================
+
         let sample_header_offsets_u8 = &data[..4 * header.0.sample_number as usize];
         let sample_header_offsets: Vec<u32> = sample_header_offsets_u8
             .chunks_exact(4)
@@ -68,6 +78,8 @@ impl ItModule {
             .unwrap();
         let data = &data[4 * header.0.sample_number as usize..];
 
+        // === Patterns Offsets ==========================================
+
         let pattern_offsets_u8 = &data[..4 * header.0.pattern_number as usize];
         let pattern_offsets: Vec<u32> = pattern_offsets_u8
             .chunks_exact(4)
@@ -76,13 +88,21 @@ impl ItModule {
             .try_into()
             .ok()
             .unwrap();
-        let data = &data[4 * header.0.pattern_number as usize..];
+        let mut data = &data[4 * header.0.pattern_number as usize..];
 
-        let (edit_history, l) = ItEditHistory::load(data);
-        let mut data = &data[l..];
+        // === Edit History =================================================
 
-        let midi_macros = if header.0.flags & 0b0000_0000_1000_0000 != 0
-            || header.0.special_flags & 0b0000_0000_0000_1000 != 0
+        let edit_history = if header.0.is_edit_history_embedded() {
+            let (edit_history, l) = ItEditHistory::load(data);
+            data = &data[l..];
+            edit_history
+        } else {
+            None
+        };
+
+        // === Midi Macros ==================================================
+
+        let midi_macros = if header.0.is_embedded_midi_macro() || header.0.is_embedded_midi_macros()
         {
             let r = bincode::serde::decode_from_slice::<ItMidiMacros, _>(
                 data,
@@ -95,46 +115,58 @@ impl ItModule {
             None
         };
 
-        // FIXME: Wtf?
+        // === Pattern names ================================================
 
-        // OMPT only
-        // let pattern_names = if header.0.is_ompt() {
-        //     let (pattern_names, l) = ItXNames::load(data);
-        //     data = &data[l..];
-        //     pattern_names
-        // } else {
-        //     vec![]
-        // };
-        // OMPT only
-        // let channel_names = if header.0.is_ompt() {
-        //     let (channel_names, l) = ItXNames::load(data);
-        //     data = &data[l..];
-        //     channel_names
-        // } else {
-        //     vec![]
-        // };
+        let pattern_names = if ItXNames::is_pnam(data) {
+            data = &data[4..];
+            let (pattern_names, l) = ItXNames::load(data, 32);
+            data = &data[l..];
+            pattern_names
+        } else {
+            vec![]
+        };
 
-        // FIXME: Plugins here???
+        // === Channel names ================================================
 
-        let message = if header.0.message_length != 0 {
+        let channel_names = if ItXNames::is_cnam(data) {
+            data = &data[4..];
+            let (channel_names, l) = ItXNames::load(data, 20);
+            data = &data[l..];
+            channel_names
+        } else {
+            vec![]
+        };
+
+        // === Mix Plugins ==================================================
+
+        let (plugins, l) = Plugins::load(data);
+        data = &data[l..];
+
+        // === Message ======================================================
+
+        let message = if header.0.is_song_message_attached() && header.0.message_length != 0 {
             let start = header.0.message_offset as usize;
             let end = start + header.0.message_length as usize;
             let src = &ser_it_module[start..end];
-            String::from_utf8_lossy(src).to_string()
+            String::from_utf8_lossy(src).trim().to_string()
         } else {
             String::new()
         };
 
+        // === Instruments ==================================================
+
         let mut instruments: Vec<ItInstrument> = vec![];
         for i in 0..header.0.instrument_number {
             let i_seek = instrument_offsets[i as usize] as usize;
-            let mut data = &ser_it_module[i_seek..];
+            let data = &ser_it_module[i_seek..];
             if !header.0.is_post20() {
                 instruments.push(ItInstrument::load_post2(data));
             } else {
                 instruments.push(ItInstrument::load_pre2(data));
             }
         }
+
+        // === Samples Header ===============================================
 
         let mut samples_header: Vec<ItSampleHeader> = vec![];
         for i in 0..header.0.sample_number {
@@ -148,12 +180,16 @@ impl ItModule {
             samples_header.push(sample_h.0);
         }
 
+        // === Patterns =====================================================
+
         let mut patterns: Vec<ItPattern> = vec![];
         for pattern_seek in &pattern_offsets {
             let data = &ser_it_module[*pattern_seek as usize..];
             let pattern = ItPattern::load(data);
             patterns.push(pattern);
         }
+
+        // === Samples ======================================================
 
         let mut samples = vec![];
         for sh in &samples_header {
@@ -166,13 +202,16 @@ impl ItModule {
             }
         }
 
+        // === All in ItModule ==============================================
+
         let it = Self {
             header: header.0,
             orders: orders.to_vec(),
             edit_history,
             midi_macros,
-            // pattern_names,
-            // channel_names,
+            pattern_names,
+            channel_names,
+            plugins,
             message,
             instruments,
             samples_header,
