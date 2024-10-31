@@ -241,11 +241,9 @@ impl ItInstrument {
         )
         .unwrap();
         data = &data[instr_h.1..];
-        let vol = bincode::serde::decode_from_slice::<ItEnvelopePre2, _>(
-            data,
-            bincode::config::legacy(),
-        )
-        .unwrap();
+        let vol =
+            bincode::serde::decode_from_slice::<ItEnvelopePre2, _>(data, bincode::config::legacy())
+                .unwrap();
         let instr = ItInstrumentPre2 {
             instr: instr_h.0,
             volume_envelope: vol.0,
@@ -287,6 +285,4 @@ impl ItInstrument {
         };
         return ItInstrument::Post2(instr);
     }
-
-
 }

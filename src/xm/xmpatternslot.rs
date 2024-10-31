@@ -1,5 +1,4 @@
 /// Original XM Pattern Slot
-
 use crate::patternslot::PatternSlot;
 use crate::pitch::Pitch;
 use bincode::error::DecodeError;

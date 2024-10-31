@@ -7,12 +7,12 @@ use alloc::vec;
 use alloc::vec::Vec;
 use serde::Deserialize;
 
-use super::it_header::ItHeader;
 use super::it_edit_history::{ItEditHistory, ItEditHistoryEntry};
-use super::it_midi_macros::ItMidiMacros;
+use super::it_header::ItHeader;
 use super::it_instrument::ItInstrument;
-use super::it_sample_header::ItSampleHeader;
+use super::it_midi_macros::ItMidiMacros;
 use super::it_pattern::ItPattern;
+use super::it_sample_header::ItSampleHeader;
 
 #[derive(Deserialize, Debug)]
 #[repr(C)]
