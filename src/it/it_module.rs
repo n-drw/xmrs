@@ -196,7 +196,11 @@ impl ItModule {
             if sh.is_associated_sample() {
                 let start = sh.sample_pointer as usize;
                 let sample = sh.get_sample_data(&ser_it_module[start..]).unwrap();
-                samples.push(Some(sample));
+                if sample.len() != 0 {
+                    samples.push(Some(sample));
+                } else {
+                    samples.push(None);
+                }
             } else {
                 samples.push(None);
             }

@@ -24,6 +24,18 @@ pub enum SampleDataType {
     StereoFloat(Vec<f32>),
 }
 
+impl SampleDataType {
+    pub fn len(&self) -> usize {
+        match &self {
+            SampleDataType::Mono8(v) => v.len(),
+            SampleDataType::Mono16(v) => v.len(),
+            SampleDataType::Stereo8(v) => v.len() / 2,
+            SampleDataType::Stereo16(v) => v.len() / 2,
+            SampleDataType::StereoFloat(v) => v.len() / 2,
+        }
+    }
+}
+
 /// A Real Data sample
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Sample {
@@ -50,13 +62,7 @@ pub struct Sample {
 impl Sample {
     /// return sample length
     pub fn len(&self) -> usize {
-        match &self.data {
-            SampleDataType::Mono8(v) => v.len(),
-            SampleDataType::Mono16(v) => v.len(),
-            SampleDataType::Stereo8(v) => v.len() / 2,
-            SampleDataType::Stereo16(v) => v.len() / 2,
-            SampleDataType::StereoFloat(v) => v.len() / 2,
-        }
+        self.data.len()
     }
 
     /// return sample at seek
