@@ -1,6 +1,7 @@
-use crate::pitch::Pitch;
-use crate::patternslot::PatternSlot;
 /// Original XM Pattern Slot
+
+use crate::patternslot::PatternSlot;
+use crate::pitch::Pitch;
 use bincode::error::DecodeError;
 
 use alloc::vec::Vec;

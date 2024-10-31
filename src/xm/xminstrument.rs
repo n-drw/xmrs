@@ -125,7 +125,8 @@ impl XmInstrDefault {
         let mut xmid: Box<Self> = Box::default();
         match &i.instr_type {
             InstrumentType::Default(id) => {
-                xmid.sample_for_pitchs.copy_from_slice(&id.sample_for_pitch[..96]);
+                xmid.sample_for_pitchs
+                    .copy_from_slice(&id.sample_for_pitch[..96]);
 
                 xmid.volume_envelope = Self::from_envelope(&id.volume_envelope);
                 xmid.number_of_volume_points = id.volume_envelope.point.len() as u8;
@@ -392,7 +393,7 @@ impl XmInstrument {
                 } else {
                     0
                 };
-                let mut sample_for_pitch: [u8; 120]= [0; 120];
+                let mut sample_for_pitch: [u8; 120] = [0; 120];
                 sample_for_pitch[..96].copy_from_slice(&xmi.sample_for_pitchs);
                 let mut id = InstrDefault {
                     sample_for_pitch,

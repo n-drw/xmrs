@@ -293,7 +293,7 @@ impl Debug for Pitch {
 
             Pitch::None => "---",
             Pitch::KeyOff => "===",
-            Pitch::Cut => "^^^"
+            Pitch::Cut => "^^^",
         };
         write!(f, "{}", text)
     }

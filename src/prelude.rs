@@ -18,8 +18,8 @@ pub use crate::{
     instr_vibrato::{InstrVibrato, Waveform},
     instrument::{Instrument, InstrumentType},
     module::{Module, Pattern, Row, MAX_NUM_ROWS},
-    pitch::Pitch,
     patternslot::PatternSlot,
     period_helper::{FrequencyType, PeriodHelper},
+    pitch::Pitch,
     sample::{LoopType, Sample, SampleDataType},
 };

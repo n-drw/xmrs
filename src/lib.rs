@@ -45,13 +45,13 @@ pub mod instr_vibrato;
 pub mod instrument;
 /// SoundTracker Module with Steroid
 pub mod module;
-/// A typical Note
-pub mod pitch;
 /// A typical pattern slot
 pub mod patternslot;
 /// Period Helper
 pub mod period_helper;
 pub(crate) mod period_helper_cache;
+/// A typical Note
+pub mod pitch;
 /// Sample with Steroid
 pub mod sample;
 
@@ -62,6 +62,10 @@ pub mod xm;
 /// Load only Historical MOD files
 #[cfg(feature = "import_amiga")]
 pub mod amiga;
+
+/// Load only Historical IT files
+#[cfg(feature = "import_it")]
+pub mod it;
 
 /// Load only Historical S3M files
 #[cfg(feature = "import_s3m")]

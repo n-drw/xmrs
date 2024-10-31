@@ -134,7 +134,6 @@ impl Sample {
             SampleDataType::Stereo8(_) => 8,
             SampleDataType::Stereo16(_) => 16,
             SampleDataType::StereoFloat(_) => 32,
-
         }
     }
 }
