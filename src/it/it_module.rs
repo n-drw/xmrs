@@ -28,7 +28,7 @@ pub struct ItModule {
     message: String,
     instruments: Vec<ItInstrument>,
     samples_header: Vec<ItSampleHeader>,
-    patterns: Vec<ItPattern>,
+    patterns: Vec<Vec<Vec<PatternSlot>>>,
     samples: Vec<Option<SampleDataType>>,
 }
 
@@ -182,10 +182,11 @@ impl ItModule {
 
         // === Patterns =====================================================
 
-        let mut patterns: Vec<ItPattern> = vec![];
+        let mut patterns: Vec<Vec<Vec<PatternSlot>>> = vec![];
         for pattern_seek in &pattern_offsets {
             let data = &ser_it_module[*pattern_seek as usize..];
-            let pattern = ItPattern::load(data);
+            let itpattern = ItPattern::load(data);
+            let pattern = itpattern.unpack();
             patterns.push(pattern);
         }
 
