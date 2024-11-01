@@ -1,5 +1,6 @@
 use alloc::vec;
 use alloc::vec::Vec;
+use bincode::error::DecodeError;
 use bincode::Decode;
 use serde::Deserialize;
 
@@ -21,17 +22,25 @@ pub struct ItEditHistoryEntry {
 pub struct ItEditHistory;
 
 impl ItEditHistory {
-    pub fn load(source: &[u8]) -> (Option<Vec<ItEditHistoryEntry>>, usize) {
+    pub fn load(source: &[u8]) -> Result<(Option<Vec<ItEditHistoryEntry>>, usize), DecodeError> {
         let data = source;
+
+        if data.len() < 2 {
+            return Err(DecodeError::LimitExceeded);
+        }
 
         let edit_history_number: u16 = u16::from_le_bytes(data[0..2].try_into().unwrap());
         if edit_history_number == 0 {
-            return (None, 2);
+            return Ok((None, 2));
         }
 
         let struct_size = core::mem::size_of::<ItEditHistoryEntry>();
         let total_size = struct_size * edit_history_number as usize;
         let data = &data[2..2 + total_size];
+
+        if data.len() < total_size {
+            return Err(DecodeError::LimitExceeded);
+        }
 
         let mut edit_histories: Vec<ItEditHistoryEntry> = vec![];
         for i in 0..edit_history_number {
@@ -44,6 +53,6 @@ impl ItEditHistory {
             edit_histories.push(edit_history_entry.0);
         }
 
-        (Some(edit_histories), 2 + total_size)
+        Ok((Some(edit_histories), 2 + total_size))
     }
 }

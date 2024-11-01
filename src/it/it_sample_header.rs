@@ -177,21 +177,21 @@ impl ItSampleHeader {
         let dst = if self.is_16bits() {
             if self.is_stereo() {
                 let sample_len = 2 * self.sample_length as usize;
-                let output = self.it_unpack_16bit(data, sample_len);
+                let output = self.it_unpack_16bit(data, sample_len)?;
                 SampleDataType::Stereo16(self.convert_16bit_sample(output.as_slice()))
             } else {
                 let sample_len = self.sample_length as usize;
-                let output = self.it_unpack_16bit(data, sample_len);
+                let output = self.it_unpack_16bit(data, sample_len)?;
                 SampleDataType::Mono16(self.convert_16bit_sample(output.as_slice()))
             }
         } else {
             if self.is_stereo() {
                 let sample_len = 2 * self.sample_length as usize;
-                let output = self.it_unpack_8bit(data, sample_len);
+                let output = self.it_unpack_8bit(data, sample_len)?;
                 SampleDataType::Stereo8(self.convert_8bit_sample(output.as_slice()))
             } else {
                 let sample_len = self.sample_length as usize;
-                let output = self.it_unpack_8bit(data, sample_len);
+                let output = self.it_unpack_8bit(data, sample_len)?;
                 SampleDataType::Mono8(self.convert_8bit_sample(output.as_slice()))
             }
         };
@@ -314,18 +314,27 @@ impl ItSampleHeader {
         dst
     }
 
-    fn it_unpack_8bit(&self, input: &[u8], output_len: usize) -> Vec<i8> {
+    fn it_unpack_8bit(&self, input: &[u8], output_len: usize) -> Result<Vec<i8>, DecodeError> {
         let mut output = Vec::new();
         let mut p_src = input;
         while output.len() < output_len {
+            if p_src.len() < 2 {
+                return Err(DecodeError::LimitExceeded);
+            }
+
             let block_len = u16::from_le_bytes([p_src[0], p_src[1]]) as usize;
+            p_src = &p_src[2..];
             let mut block_output_len = 0;
             let mut left: u8 = 9;
             let mut temp: u8 = 0;
             let mut temp2: u8 = 0;
 
-            let mut bit_reader = BitReader::new(&p_src[2..2 + block_len]);
-            p_src = &p_src[2 + block_len..];
+            if p_src.len() < block_len {
+                return Err(DecodeError::LimitExceeded);
+            }
+
+            let mut bit_reader = BitReader::new(&p_src[..block_len]);
+            p_src = &p_src[block_len..];
 
             loop {
                 if bit_reader.is_empty() {
@@ -338,21 +347,23 @@ impl ItSampleHeader {
                     break;
                 }
 
-                if output.len() == output_len {
+                if output.len() >= output_len {
                     // last exit case: we have all output data
                     break;
                 }
 
-                let mut bits: u16 = bit_reader.read_bits(left).expect("Failed to read bits") as u16;
+                let mut bits: u16 = bit_reader
+                    .read_bits(left)
+                    .ok_or(DecodeError::LimitExceeded)? as u16;
 
                 if left < 7 {
                     // Type A
                     if (1 as u16) << (left - 1) == bits {
-                        bits = (bit_reader.read_bits(3).expect("Failed to read bits") + 1) as u16;
-                        left = if (bits as u8) < left {
-                            bits as u8
+                        bits = bit_reader.read_bits(3).ok_or(DecodeError::LimitExceeded)? as u16;
+                        left = if bits as u8 + 1 < left {
+                            bits as u8 + 1
                         } else {
-                            (bits + 1) as u8
+                            bits as u8 + 1 + 1
                         };
                         continue;
                     }
@@ -399,21 +410,30 @@ impl ItSampleHeader {
             }
         }
 
-        output
+        Ok(output)
     }
 
-    fn it_unpack_16bit(&self, input: &[u8], output_len: usize) -> Vec<i16> {
+    fn it_unpack_16bit(&self, input: &[u8], output_len: usize) -> Result<Vec<i16>, DecodeError> {
         let mut output = Vec::new();
         let mut p_src = input;
         while output.len() < output_len {
+            if p_src.len() < 2 {
+                return Err(DecodeError::LimitExceeded);
+            }
+
             let block_len = u16::from_le_bytes([p_src[0], p_src[1]]) as usize;
+            p_src = &p_src[2..];
             let mut block_output_len = 0;
             let mut left: u8 = 17;
             let mut temp: i16 = 0;
             let mut temp2: i16 = 0;
 
-            let mut bit_reader = BitReader::new(&p_src[2..2 + block_len]);
-            p_src = &p_src[2 + block_len..];
+            if p_src.len() < block_len {
+                return Err(DecodeError::LimitExceeded);
+            }
+
+            let mut bit_reader = BitReader::new(&p_src[..block_len]);
+            p_src = &p_src[block_len..];
 
             loop {
                 if bit_reader.is_empty() {
@@ -426,21 +446,23 @@ impl ItSampleHeader {
                     break;
                 }
 
-                if output.len() == output_len {
+                if output.len() >= output_len {
                     // last exit case: we have all output data
                     break;
                 }
 
-                let mut bits: u32 = bit_reader.read_bits(left).expect("Failed to read bits") as u32;
+                let mut bits = bit_reader
+                    .read_bits(left)
+                    .ok_or(DecodeError::LimitExceeded)?;
 
                 if left < 7 {
                     // Type A
                     if (1 as u32) << (left - 1) == bits {
-                        bits = (bit_reader.read_bits(4).expect("Failed to read bits") + 1) as u32;
-                        left = if (bits as u8) < left {
-                            bits as u8
+                        bits = bit_reader.read_bits(4).ok_or(DecodeError::LimitExceeded)?;
+                        left = if bits as u8 + 1 < left {
+                            bits as u8 + 1
                         } else {
-                            (bits + 1) as u8
+                            bits as u8 + 1 + 1
                         };
                         continue;
                     }
@@ -487,6 +509,6 @@ impl ItSampleHeader {
             }
         }
 
-        output
+        Ok(output)
     }
 }

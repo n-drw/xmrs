@@ -1,6 +1,7 @@
 use alloc::string::{String, ToString};
 use alloc::vec;
 use alloc::vec::Vec;
+use bincode::error::DecodeError;
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug, Default)]
@@ -8,15 +9,25 @@ use serde::Deserialize;
 pub struct ItXNames;
 
 impl ItXNames {
-    pub fn load(source: &[u8], chunk_size: usize) -> (Vec<String>, usize) {
+    pub fn load(source: &[u8], chunk_size: usize) -> Result<(Vec<String>, usize), DecodeError> {
         let data = source;
+
+        if data.len() < 4 {
+            return Err(DecodeError::LimitExceeded);
+        }
 
         let length = u32::from_le_bytes(data[0..4].try_into().unwrap());
         if length == 0 {
-            return (vec![], 4);
+            return Ok((vec![], 4));
         }
         let data = &data[4..4 + length as usize];
-        // let dest: Vec<String> = data.chunks(chunk_size).map(|chunk| String::from_utf8_lossy(chunk).trim().to_string()).collect();
+
+        if data.len() < length as usize {
+            return Err(DecodeError::ArrayLengthMismatch {
+                required: length as usize,
+                found: data.len(),
+            });
+        }
 
         let dest: Vec<String> = data
             .chunks(chunk_size)
@@ -29,7 +40,7 @@ impl ItXNames {
             .map(|chunk| String::from_utf8_lossy(&chunk).trim().to_string()) // Convertit chaque chunk en String
             .collect();
 
-        (dest, 4 + length as usize)
+        Ok((dest, 4 + length as usize))
     }
 
     pub fn is_pnam(data: &[u8]) -> bool {

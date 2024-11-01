@@ -1,3 +1,4 @@
+use bincode::error::DecodeError;
 use serde::Deserialize;
 use serde_big_array::BigArray;
 
@@ -93,6 +94,26 @@ pub struct ItHeader {
 }
 
 impl ItHeader {
+    pub fn load(data: &[u8]) -> Result<(Self, usize), DecodeError> {
+        let header_de =
+            bincode::serde::decode_from_slice::<ItHeader, _>(data, bincode::config::legacy());
+
+        match header_de {
+            Ok(header_de_ok) => {
+                if header_de_ok.0.is_it_header() {
+                    return Ok(header_de_ok);
+                } else {
+                    return Err(DecodeError::OtherString("Not an IMPM header!".to_string()));
+                }
+            }
+            Err(e) => return Err(e),
+        }
+    }
+
+    pub fn get_size() -> usize {
+        core::mem::size_of::<ItHeader>()
+    }
+
     pub fn is_it_header(&self) -> bool {
         self.id[0] == b'I' && self.id[1] == b'M' && self.id[2] == b'P' && self.id[3] == b'M'
     }

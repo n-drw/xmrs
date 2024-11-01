@@ -1,5 +1,6 @@
 use alloc::vec;
 use alloc::vec::Vec;
+use bincode::error::DecodeError;
 use serde::Deserialize;
 
 const MAX_MIXPLUGINS: usize = 64;
@@ -27,8 +28,8 @@ pub struct Plugins {
     mix: Vec<MixPlugin>,
 }
 
-impl Plugins {
-    pub fn new() -> Self {
+impl Default for Plugins {
+    fn default() -> Self {
         Self {
             channel_settings: vec![0; 64],
             mix: vec![
@@ -46,8 +47,14 @@ impl Plugins {
             ],
         }
     }
+}
 
-    pub fn load(source: &[u8]) -> (Self, usize) {
+impl Plugins {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn load(source: &[u8]) -> Result<(Self, usize), DecodeError> {
         let mut data = source;
         let mut plugins = Self::new();
 
@@ -55,8 +62,10 @@ impl Plugins {
             let plugin_id = u32::from_le_bytes(data[0..4].try_into().unwrap());
             let plugin_size = u32::from_le_bytes(data[4..8].try_into().unwrap()) as usize;
 
-            if plugin_size > data.len() {
-                break;
+            if data.len() < plugin_size {
+                return Err(DecodeError::OtherString(
+                    "Plugin Size too big!?".to_string(),
+                ));
             }
 
             if plugin_id == u32::from_le_bytes(*b"CHFX") {
@@ -65,6 +74,8 @@ impl Plugins {
                     if ch * 4 < plugin_size {
                         plugins.channel_settings[ch] =
                             u32::from_le_bytes(data[ch * 4..(ch + 1) * 4].try_into().unwrap());
+                    } else {
+                        return Err(DecodeError::LimitExceeded);
                     }
                 }
                 data = &data[plugin_size..];
@@ -72,7 +83,9 @@ impl Plugins {
                 let plugin_index = ((data[2] - b'0') * 10 + (data[3] - b'0')) as usize;
                 data = &data[8..];
                 if plugin_index >= MAX_MIXPLUGINS {
-                    break;
+                    return Err(DecodeError::OtherString(
+                        "Plugin Index overflow!?".to_string(),
+                    ));
                 }
                 let info: (SndMixPluginInfo, usize) =
                     bincode::serde::decode_from_slice::<SndMixPluginInfo, _>(
@@ -93,6 +106,6 @@ impl Plugins {
                 break;
             }
         }
-        (plugins, source.len() - data.len())
+        Ok((plugins, source.len() - data.len()))
     }
 }

@@ -24,7 +24,7 @@ pub struct ItModule {
     midi_macros: Option<ItMidiMacros>,
     pattern_names: Vec<String>,
     channel_names: Vec<String>,
-    plugins: Plugins,
+    plugins: Option<Plugins>,
     message: String,
     instruments: Vec<ItInstrument>,
     samples_header: Vec<ItSampleHeader>,
@@ -38,23 +38,36 @@ impl ItModule {
 
         // === ItHeader =====================================================
 
-        let header = if let Ok(ith) =
-            bincode::serde::decode_from_slice::<ItHeader, _>(data, bincode::config::legacy())
-        {
-            ith
-        } else {
-            return Err(DecodeError::OtherString(
-                "ITHeader Deserialize error.".to_string(),
-            ));
-        };
+        if data.len() < ItHeader::get_size() {
+            return Err(DecodeError::ArrayLengthMismatch {
+                required: ItHeader::get_size(),
+                found: data.len(),
+            });
+        }
+
+        let header = ItHeader::load(data)?;
         let data = &data[header.1..];
 
         // === Orders =======================================================
+
+        if data.len() < header.0.order_number as usize {
+            return Err(DecodeError::ArrayLengthMismatch {
+                required: header.0.order_number as usize,
+                found: data.len(),
+            });
+        }
 
         let orders = &data[..header.0.order_number as usize];
         let data = &data[header.0.order_number as usize..];
 
         // === Instruments Offsets ==========================================
+
+        if data.len() < 4 * header.0.instrument_number as usize {
+            return Err(DecodeError::ArrayLengthMismatch {
+                required: 4 * header.0.instrument_number as usize,
+                found: data.len(),
+            });
+        }
 
         let instrument_offsets_u8 = &data[..4 * header.0.instrument_number as usize];
         let instrument_offsets: Vec<u32> = instrument_offsets_u8
@@ -62,11 +75,17 @@ impl ItModule {
             .map(|chunk| u32::from_le_bytes(chunk.try_into().unwrap()))
             .collect::<Vec<u32>>()
             .try_into()
-            .ok()
             .unwrap();
         let data = &data[4 * header.0.instrument_number as usize..];
 
         // === Samples Header Offsets =======================================
+
+        if data.len() < 4 * header.0.sample_number as usize {
+            return Err(DecodeError::ArrayLengthMismatch {
+                required: 4 * header.0.sample_number as usize,
+                found: data.len(),
+            });
+        }
 
         let sample_header_offsets_u8 = &data[..4 * header.0.sample_number as usize];
         let sample_header_offsets: Vec<u32> = sample_header_offsets_u8
@@ -74,11 +93,17 @@ impl ItModule {
             .map(|chunk| u32::from_le_bytes(chunk.try_into().unwrap()))
             .collect::<Vec<u32>>()
             .try_into()
-            .ok()
             .unwrap();
         let data = &data[4 * header.0.sample_number as usize..];
 
         // === Patterns Offsets ==========================================
+
+        if data.len() < 4 * header.0.pattern_number as usize {
+            return Err(DecodeError::ArrayLengthMismatch {
+                required: 4 * header.0.pattern_number as usize,
+                found: data.len(),
+            });
+        }
 
         let pattern_offsets_u8 = &data[..4 * header.0.pattern_number as usize];
         let pattern_offsets: Vec<u32> = pattern_offsets_u8
@@ -86,14 +111,13 @@ impl ItModule {
             .map(|chunk| u32::from_le_bytes(chunk.try_into().unwrap()))
             .collect::<Vec<u32>>()
             .try_into()
-            .ok()
             .unwrap();
         let mut data = &data[4 * header.0.pattern_number as usize..];
 
         // === Edit History =================================================
 
         let edit_history = if header.0.is_edit_history_embedded() {
-            let (edit_history, l) = ItEditHistory::load(data);
+            let (edit_history, l) = ItEditHistory::load(data)?;
             data = &data[l..];
             edit_history
         } else {
@@ -107,8 +131,7 @@ impl ItModule {
             let r = bincode::serde::decode_from_slice::<ItMidiMacros, _>(
                 data,
                 bincode::config::legacy(),
-            )
-            .unwrap();
+            )?;
             data = &data[r.1..];
             Some(r.0)
         } else {
@@ -119,7 +142,7 @@ impl ItModule {
 
         let pattern_names = if ItXNames::is_pnam(data) {
             data = &data[4..];
-            let (pattern_names, l) = ItXNames::load(data, 32);
+            let (pattern_names, l) = ItXNames::load(data, 32)?;
             data = &data[l..];
             pattern_names
         } else {
@@ -130,7 +153,7 @@ impl ItModule {
 
         let channel_names = if ItXNames::is_cnam(data) {
             data = &data[4..];
-            let (channel_names, l) = ItXNames::load(data, 20);
+            let (channel_names, l) = ItXNames::load(data, 20)?;
             data = &data[l..];
             channel_names
         } else {
@@ -139,14 +162,24 @@ impl ItModule {
 
         // === Mix Plugins ==================================================
 
-        let (plugins, l) = Plugins::load(data);
-        data = &data[l..];
+        let (plugins, _l) = if let Ok(p) = Plugins::load(data) {
+            (Some(p.0), p.1)
+        } else {
+            (None, 0)
+        };
+        // data = &data[l..];
 
         // === Message ======================================================
 
         let message = if header.0.is_song_message_attached() && header.0.message_length != 0 {
             let start = header.0.message_offset as usize;
             let end = start + header.0.message_length as usize;
+            if (&ser_it_module[start..]).len() < header.0.message_length as usize {
+                return Err(DecodeError::ArrayLengthMismatch {
+                    required: header.0.message_length as usize,
+                    found: (&ser_it_module[start..]).len(),
+                });
+            }
             let src = &ser_it_module[start..end];
             String::from_utf8_lossy(src).trim().to_string()
         } else {
@@ -158,11 +191,16 @@ impl ItModule {
         let mut instruments: Vec<ItInstrument> = vec![];
         for i in 0..header.0.instrument_number {
             let i_seek = instrument_offsets[i as usize] as usize;
+
+            if ser_it_module.len() < i_seek {
+                return Err(DecodeError::LimitExceeded);
+            }
+
             let data = &ser_it_module[i_seek..];
             if !header.0.is_post20() {
-                instruments.push(ItInstrument::load_post2(data));
+                instruments.push(ItInstrument::load_post2(data)?);
             } else {
-                instruments.push(ItInstrument::load_pre2(data));
+                instruments.push(ItInstrument::load_pre2(data)?);
             }
         }
 
@@ -171,12 +209,16 @@ impl ItModule {
         let mut samples_header: Vec<ItSampleHeader> = vec![];
         for i in 0..header.0.sample_number {
             let i_seek = sample_header_offsets[i as usize] as usize;
+
+            if ser_it_module.len() < i_seek {
+                return Err(DecodeError::LimitExceeded);
+            }
+
             let data = &ser_it_module[i_seek..];
             let sample_h = bincode::serde::decode_from_slice::<ItSampleHeader, _>(
                 data,
                 bincode::config::legacy(),
-            )
-            .unwrap();
+            )?;
             samples_header.push(sample_h.0);
         }
 
@@ -184,6 +226,10 @@ impl ItModule {
 
         let mut patterns: Vec<Vec<Vec<PatternSlot>>> = vec![];
         for pattern_seek in &pattern_offsets {
+            if ser_it_module.len() < *pattern_seek as usize {
+                return Err(DecodeError::LimitExceeded);
+            }
+
             let data = &ser_it_module[*pattern_seek as usize..];
             let itpattern = ItPattern::load(data)?;
             let pattern = itpattern.unpack()?;
@@ -196,7 +242,12 @@ impl ItModule {
         for sh in &samples_header {
             if sh.is_associated_sample() {
                 let start = sh.sample_pointer as usize;
-                let sample = sh.get_sample_data(&ser_it_module[start..]).unwrap();
+
+                if ser_it_module.len() < start {
+                    return Err(DecodeError::LimitExceeded);
+                }
+
+                let sample = sh.get_sample_data(&ser_it_module[start..])?;
                 if sample.len() != 0 {
                     samples.push(Some(sample));
                 } else {

@@ -1,3 +1,4 @@
+use bincode::error::DecodeError;
 use serde::Deserialize;
 use serde_big_array::BigArray;
 
@@ -249,57 +250,53 @@ impl ItInstrument {
         }
     }
 
-    pub fn load_post2(source: &[u8]) -> Self {
+    pub fn load_post2(source: &[u8]) -> Result<Self, DecodeError> {
         let mut data = source;
 
         let instr_h = bincode::serde::decode_from_slice::<ItInstrumentHeaderPre2, _>(
             data,
             bincode::config::legacy(),
-        )
-        .unwrap();
+        )?;
         data = &data[instr_h.1..];
-        let vol =
-            bincode::serde::decode_from_slice::<ItEnvelopePre2, _>(data, bincode::config::legacy())
-                .unwrap();
+        let vol = bincode::serde::decode_from_slice::<ItEnvelopePre2, _>(
+            data,
+            bincode::config::legacy(),
+        )?;
         let instr = ItInstrumentPre2 {
             instr: instr_h.0,
             volume_envelope: vol.0,
         };
-        return ItInstrument::Pre2(instr);
+        return Ok(ItInstrument::Pre2(instr));
     }
 
-    pub fn load_pre2(source: &[u8]) -> Self {
+    pub fn load_pre2(source: &[u8]) -> Result<Self, DecodeError> {
         let mut data = source;
 
         let instr_h = bincode::serde::decode_from_slice::<ItInstrumentHeaderPost2, _>(
             data,
             bincode::config::legacy(),
-        )
-        .unwrap();
+        )?;
         data = &data[instr_h.1..];
         let vol = bincode::serde::decode_from_slice::<ItEnvelopePost2, _>(
             data,
             bincode::config::legacy(),
-        )
-        .unwrap();
+        )?;
         data = &data[1 + vol.1..];
         let pan = bincode::serde::decode_from_slice::<ItEnvelopePost2, _>(
             data,
             bincode::config::legacy(),
-        )
-        .unwrap();
+        )?;
         data = &data[1 + pan.1..];
         let pitch = bincode::serde::decode_from_slice::<ItEnvelopePost2, _>(
             data,
             bincode::config::legacy(),
-        )
-        .unwrap();
+        )?;
         let instr = ItInstrumentPost2 {
             instr: instr_h.0,
             volume_envelope: vol.0,
             panning_envelope: pan.0,
             pitch_envelope: pitch.0,
         };
-        return ItInstrument::Post2(instr);
+        return Ok(ItInstrument::Post2(instr));
     }
 }
