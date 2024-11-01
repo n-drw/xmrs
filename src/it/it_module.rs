@@ -185,8 +185,8 @@ impl ItModule {
         let mut patterns: Vec<Vec<Vec<PatternSlot>>> = vec![];
         for pattern_seek in &pattern_offsets {
             let data = &ser_it_module[*pattern_seek as usize..];
-            let itpattern = ItPattern::load(data);
-            let pattern = itpattern.unpack();
+            let itpattern = ItPattern::load(data)?;
+            let pattern = itpattern.unpack()?;
             patterns.push(pattern);
         }
 

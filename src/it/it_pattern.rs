@@ -1,5 +1,6 @@
 use alloc::vec;
 use alloc::vec::Vec;
+use bincode::error::DecodeError;
 use serde::Deserialize;
 
 use crate::prelude::PatternSlot;
@@ -29,33 +30,41 @@ pub struct ItPattern {
 }
 
 impl ItPattern {
-    pub fn load(source: &[u8]) -> Self {
-        let data = source;
+    pub fn load(source: &[u8]) -> Result<Self, DecodeError> {
+        let mut data = source;
+
+        if data.len() < 8 {
+            return Err(DecodeError::LimitExceeded);
+        }
 
         let pattern_length: u16 = u16::from_le_bytes(data[0..2].try_into().unwrap());
         let row_count: i16 = i16::from_le_bytes(data[2..4].try_into().unwrap());
         let reserved: u32 = u32::from_le_bytes(data[4..8].try_into().unwrap());
 
+        data = &data[8..];
+
+        if data.len() < pattern_length as usize {
+            return Err(DecodeError::LimitExceeded);
+        }
+
         if pattern_length == 0 {
-            return Self {
+            return Ok(Self {
                 pattern_length,
                 row_count,
                 reserved,
                 packed_data: vec![],
-            };
+            });
         }
 
-        let start = 8;
-        let end = 8 + pattern_length as usize;
-        return Self {
+        return Ok(Self {
             pattern_length,
             row_count,
             reserved,
-            packed_data: data[start..end].to_vec(),
-        };
+            packed_data: data[..pattern_length as usize].to_vec(),
+        });
     }
 
-    pub fn unpack(&self) -> Vec<Vec<PatternSlot>> {
+    pub fn unpack(&self) -> Result<Vec<Vec<PatternSlot>>, DecodeError> {
         let mut result = vec![vec![PatternSlot::default(); 64]; self.row_count as usize];
         let mut last_mask_vars = vec![0u8; 64];
         let mut data_iter = self.packed_data.iter();
@@ -70,7 +79,7 @@ impl ItPattern {
                 let channel = (channel_mask - 1) & 63;
 
                 let mask_variable = if channel_mask & 0x80 != 0 {
-                    let var = *data_iter.next().unwrap();
+                    let var = *data_iter.next().ok_or(DecodeError::LimitExceeded)?;
                     last_mask_vars[channel as usize] = var;
                     var
                 } else {
@@ -80,27 +89,29 @@ impl ItPattern {
                 let mut slot = PatternSlot::default();
 
                 if mask_variable & 0x01 != 0 {
-                    let n = *data_iter.next().unwrap();
-                    slot.note = n.try_into().unwrap();
+                    let n = *data_iter.next().ok_or(DecodeError::LimitExceeded)?;
+                    slot.note = n.try_into().map_err(|_| {
+                        DecodeError::OtherString("Failed to convert note".to_string())
+                    })?;
                 } else if mask_variable & 0x10 != 0 && row > 0 {
                     slot.note = result[row - 1][channel as usize].note;
                 }
 
                 if mask_variable & 0x02 != 0 {
-                    slot.instrument = *data_iter.next().unwrap();
+                    slot.instrument = *data_iter.next().ok_or(DecodeError::LimitExceeded)?;
                 } else if mask_variable & 0x20 != 0 && row > 0 {
                     slot.instrument = result[row - 1][channel as usize].instrument;
                 }
 
                 if mask_variable & 0x04 != 0 {
-                    slot.volume = *data_iter.next().unwrap();
+                    slot.volume = *data_iter.next().ok_or(DecodeError::LimitExceeded)?;
                 } else if mask_variable & 0x40 != 0 && row > 0 {
                     slot.volume = result[row - 1][channel as usize].volume;
                 }
 
                 if mask_variable & 0x08 != 0 {
-                    slot.effect_type = *data_iter.next().unwrap();
-                    slot.effect_parameter = *data_iter.next().unwrap();
+                    slot.effect_type = *data_iter.next().ok_or(DecodeError::LimitExceeded)?;
+                    slot.effect_parameter = *data_iter.next().ok_or(DecodeError::LimitExceeded)?;
                 } else if mask_variable & 0x80 != 0 && row > 0 {
                     slot.effect_type = result[row - 1][channel as usize].effect_type;
                     slot.effect_parameter = result[row - 1][channel as usize].effect_parameter;
@@ -114,6 +125,6 @@ impl ItPattern {
                 };
             }
         }
-        result
+        Ok(result)
     }
 }
