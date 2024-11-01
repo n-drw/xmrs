@@ -4,13 +4,15 @@ use serde_big_array::BigArray;
 
 use super::serde_helper::deserialize_string_12;
 use super::serde_helper::deserialize_string_26;
+use super::serde_helper::deserialize_string_4;
 
 #[derive(Deserialize, Debug)]
 #[repr(C)]
 /// IT instrument header (pre-2.0).
 pub struct ItInstrumentHeaderPre2 {
     /// Identifier ("IMPI").
-    pub id: [u8; 4],
+    #[serde(deserialize_with = "deserialize_string_4")]
+    pub id: String,
 
     /// DOS filename
     #[serde(deserialize_with = "deserialize_string_12")]
@@ -78,6 +80,12 @@ pub struct ItInstrumentHeaderPre2 {
     pub note_sample_keyboard_table: [(u8, u8); 120],
 }
 
+impl ItInstrumentHeaderPre2 {
+    pub fn is_it_instrument(&self) -> bool {
+        self.id == "IMPI"
+    }
+}
+
 // Volume only
 #[derive(Deserialize, Debug)]
 #[repr(C)]
@@ -96,7 +104,8 @@ pub struct ItEnvelopePre2 {
 #[repr(C)]
 pub struct ItInstrumentHeaderPost2 {
     /// Instrument identifier - must be "IMPI"
-    pub id: [u8; 4],
+    #[serde(deserialize_with = "deserialize_string_4")]
+    pub id: String,
 
     /// DOS filename
     #[serde(deserialize_with = "deserialize_string_12")]
@@ -183,6 +192,12 @@ pub struct ItInstrumentHeaderPost2 {
     pub note_sample_keyboard_table: [(u8, u8); 120],
 }
 
+impl ItInstrumentHeaderPost2 {
+    pub fn is_it_instrument(&self) -> bool {
+        self.id == "IMPI"
+    }
+}
+
 #[derive(Deserialize, Debug, Default)]
 #[repr(C)]
 pub struct ItEnvelopePost2 {
@@ -225,12 +240,24 @@ pub struct ItInstrumentPre2 {
     pub volume_envelope: ItEnvelopePre2,
 }
 
+impl ItInstrumentPre2 {
+    pub fn is_it_instrument(&self) -> bool {
+        self.instr.is_it_instrument()
+    }
+}
+
 #[derive(Deserialize, Debug)]
 pub struct ItInstrumentPost2 {
     pub instr: ItInstrumentHeaderPost2,
     pub volume_envelope: ItEnvelopePost2,
     pub panning_envelope: ItEnvelopePost2,
     pub pitch_envelope: ItEnvelopePost2,
+}
+
+impl ItInstrumentPost2 {
+    pub fn is_it_instrument(&self) -> bool {
+        self.instr.is_it_instrument()
+    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -242,18 +269,8 @@ pub enum ItInstrument {
 impl ItInstrument {
     pub fn is_it_instrument(&self) -> bool {
         match self {
-            ItInstrument::Pre2(i) => {
-                i.instr.id[0] == b'I'
-                    && i.instr.id[1] == b'M'
-                    && i.instr.id[2] == b'P'
-                    && i.instr.id[3] == b'I'
-            }
-            ItInstrument::Post2(i) => {
-                i.instr.id[0] == b'I'
-                    && i.instr.id[1] == b'M'
-                    && i.instr.id[2] == b'P'
-                    && i.instr.id[3] == b'I'
-            }
+            ItInstrument::Pre2(i) => i.is_it_instrument(),
+            ItInstrument::Post2(i) => i.is_it_instrument(),
         }
     }
 
@@ -264,6 +281,13 @@ impl ItInstrument {
             data,
             bincode::config::legacy(),
         )?;
+
+        if !instr_h.0.is_it_instrument() {
+            return Err(DecodeError::OtherString(
+                "Not an IT Instrument?".to_string(),
+            ));
+        }
+
         data = &data[instr_h.1..];
         let vol = bincode::serde::decode_from_slice::<ItEnvelopePre2, _>(
             data,
@@ -283,6 +307,13 @@ impl ItInstrument {
             data,
             bincode::config::legacy(),
         )?;
+
+        if !instr_h.0.is_it_instrument() {
+            return Err(DecodeError::OtherString(
+                "Not an IT Instrument?".to_string(),
+            ));
+        }
+
         data = &data[instr_h.1..];
         let vol = bincode::serde::decode_from_slice::<ItEnvelopePost2, _>(
             data,

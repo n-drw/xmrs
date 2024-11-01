@@ -3,22 +3,25 @@ use serde::Deserialize;
 use serde_big_array::BigArray;
 
 use super::serde_helper::deserialize_string_26;
+use super::serde_helper::deserialize_string_4;
 
 /// IT file header.
 #[derive(Deserialize, Debug)]
 #[repr(C)]
 pub struct ItHeader {
     /// Identifier ("IMPM").
-    id: [u8; 4],
+    #[serde(deserialize_with = "deserialize_string_4")]
+    id: String,
 
     /// Song name
     #[serde(deserialize_with = "deserialize_string_26")]
     pub song_name: String,
 
-    /// Pattern information
-    /// - The first byte represents the number of rows per beat.
-    /// - The second byte represents the number of rows per measure.
-    pub pattern_highlight: [u8; 2],
+    /// Pattern information: Represents the number of rows per beat.
+    pub rows_per_beat: u8,
+
+    /// Pattern information: Represents the number of rows per measure.
+    pub rows_per_measure: u8,
 
     /// Number of sequenced patterns in the song.
     pub order_number: u16,
@@ -83,7 +86,8 @@ pub struct ItHeader {
     pub message_offset: u32,
 
     /// Reserved field ("OMPT" for interpreted Mod Plug files).
-    pub reserved: [u8; 4],
+    #[serde(deserialize_with = "deserialize_string_4")]
+    pub reserved: String,
 
     /// Initial pan of the channels
     /// Each byte is a pan value (examples: 0 is left pan, 32 is center pan and 64 is right pan).
@@ -106,7 +110,7 @@ impl ItHeader {
                 if header_de_ok.0.is_it_header() {
                     return Ok(header_de_ok);
                 } else {
-                    return Err(DecodeError::OtherString("Not an IMPM header!".to_string()));
+                    return Err(DecodeError::OtherString("Not an IT Module?".to_string()));
                 }
             }
             Err(e) => return Err(e),
@@ -118,15 +122,12 @@ impl ItHeader {
     }
 
     pub fn is_it_header(&self) -> bool {
-        self.id[0] == b'I' && self.id[1] == b'M' && self.id[2] == b'P' && self.id[3] == b'M'
+        self.id == "IMPM"
     }
 
     /// Mod Plug file?
     pub fn is_ompt(&self) -> bool {
-        self.reserved[0] == b'O'
-            && self.reserved[1] == b'M'
-            && self.reserved[2] == b'P'
-            && self.reserved[3] == b'T'
+        self.reserved == "OMPT"
     }
 
     pub fn is_post20(&self) -> bool {

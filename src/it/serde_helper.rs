@@ -20,5 +20,6 @@ macro_rules! make_deserialize_string_fn {
     };
 }
 
+make_deserialize_string_fn!(deserialize_string_4, 4);
 make_deserialize_string_fn!(deserialize_string_12, 12);
 make_deserialize_string_fn!(deserialize_string_26, 26);
