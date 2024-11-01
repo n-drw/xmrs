@@ -1,10 +1,14 @@
+use core::time::Duration;
+
+use alloc::format;
 use alloc::vec;
 use alloc::vec::Vec;
 use bincode::error::DecodeError;
 use bincode::Decode;
+use core::fmt;
 use serde::Deserialize;
 
-#[derive(Deserialize, Debug, Default, Decode)]
+#[derive(Deserialize, Default, Decode)]
 #[repr(C)]
 pub struct ItEditHistoryEntry {
     // 2 bytes (Microsoft FAT date format)
@@ -15,6 +19,49 @@ pub struct ItEditHistoryEntry {
 
     // 4 bytes (Runtime in MS-DOS ticks, 1/18.2 second)
     run_time: u32,
+}
+
+impl fmt::Debug for ItEditHistoryEntry {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let date = self.date();
+        let time = self.time();
+        f.debug_struct("ItEditHistoryEntry")
+            .field(
+                "datetime",
+                &format!(
+                    "{:04}-{:02}-{:02} {:02}:{:02}:{:02}",
+                    date.0, date.1, date.2, time.0, time.1, time.2
+                ),
+            )
+            .field("duration", &format!("{:?}", self.duration()))
+            .finish()
+    }
+}
+
+impl ItEditHistoryEntry {
+    /// Return (year, month, day)
+    pub fn date(&self) -> (u16, u8, u8) {
+        let year = (self.fat_date >> 9) + 1980;
+        let month = ((self.fat_date >> 5) & 0x0F) as u8;
+        let day = (self.fat_date & 0x1F) as u8;
+        (year, month, day)
+    }
+
+    /// Return (hour, minute, second)
+    pub fn time(&self) -> (u8, u8, u8) {
+        let hour = ((self.fat_time >> 11) & 0x1F) as u8;
+        let minute = ((self.fat_time >> 5) & 0x3F) as u8;
+        let second = ((self.fat_time & 0x1F) * 2) as u8;
+        (hour, minute, second)
+    }
+
+    /// Return Duration
+    pub fn duration(&self) -> Duration {
+        let ticks = self.run_time as f64 / 18.2;
+        let seconds = ticks as u64;
+        let nanoseconds = (ticks.fract() * 1e9) as u32;
+        Duration::new(seconds, nanoseconds)
+    }
 }
 
 #[derive(Deserialize, Debug, Default)]

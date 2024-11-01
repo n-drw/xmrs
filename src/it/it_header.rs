@@ -2,6 +2,8 @@ use bincode::error::DecodeError;
 use serde::Deserialize;
 use serde_big_array::BigArray;
 
+use super::serde_helper::deserialize_string_26;
+
 /// IT file header.
 #[derive(Deserialize, Debug)]
 #[repr(C)]
@@ -9,8 +11,9 @@ pub struct ItHeader {
     /// Identifier ("IMPM").
     id: [u8; 4],
 
-    /// Song name (26 bytes, including nulls).
-    pub song_name: [u8; 26],
+    /// Song name
+    #[serde(deserialize_with = "deserialize_string_26")]
+    pub song_name: String,
 
     /// Pattern information
     /// - The first byte represents the number of rows per beat.

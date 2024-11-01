@@ -7,6 +7,8 @@ use alloc::vec::Vec;
 use serde::Deserialize;
 
 use super::bitreader::BitReader;
+use super::serde_helper::deserialize_string_12;
+use super::serde_helper::deserialize_string_26;
 
 /// Structure representing a sample header in the IMPS format.
 #[derive(Deserialize, Debug, Default)]
@@ -15,9 +17,9 @@ pub struct ItSampleHeader {
     /// "IMPS"
     pub id: [u8; 4],
 
-    /// Name of the DOS file (null-terminated).
-    /// Length: 12 bytes
-    pub dos_filename: [u8; 12],
+    /// Name of the DOS file
+    #[serde(deserialize_with = "deserialize_string_12")]
+    pub dos_filename: String,
 
     /// Reserved byte for future use.
     /// Length: 1 byte
@@ -45,7 +47,8 @@ pub struct ItSampleHeader {
 
     /// Name of the sample (null-terminated).
     /// Length: 26 bytes
-    pub sample_name: [u8; 26],
+    #[serde(deserialize_with = "deserialize_string_26")]
+    pub sample_name: String,
 
     /// Convert flags for the sample.
     /// Length: 1 byte

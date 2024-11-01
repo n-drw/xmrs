@@ -2,6 +2,9 @@ use bincode::error::DecodeError;
 use serde::Deserialize;
 use serde_big_array::BigArray;
 
+use super::serde_helper::deserialize_string_12;
+use super::serde_helper::deserialize_string_26;
+
 #[derive(Deserialize, Debug)]
 #[repr(C)]
 /// IT instrument header (pre-2.0).
@@ -9,8 +12,9 @@ pub struct ItInstrumentHeaderPre2 {
     /// Identifier ("IMPI").
     pub id: [u8; 4],
 
-    /// DOS filename (12 bytes).
-    pub filename: [u8; 12],
+    /// DOS filename
+    #[serde(deserialize_with = "deserialize_string_12")]
+    pub filename: String,
 
     /// Reserved for future use.
     pub reserved1: u8,
@@ -61,7 +65,8 @@ pub struct ItInstrumentHeaderPre2 {
     pub reserved3: u8,
 
     /// Instrument Name
-    pub instrument_name: [u8; 26],
+    #[serde(deserialize_with = "deserialize_string_26")]
+    pub instrument_name: String,
 
     /// Reserved for future use.
     pub reserved4: [u8; 6],
@@ -94,7 +99,8 @@ pub struct ItInstrumentHeaderPost2 {
     pub id: [u8; 4],
 
     /// DOS filename
-    pub dos_filename: [u8; 12],
+    #[serde(deserialize_with = "deserialize_string_12")]
+    pub dos_filename: String,
 
     /// Reserved
     pub reserved1: u8,
@@ -150,7 +156,8 @@ pub struct ItInstrumentHeaderPost2 {
     pub reserved2: u8,
 
     /// Instrument name
-    pub instrument_name: [u8; 26],
+    #[serde(deserialize_with = "deserialize_string_26")]
+    pub instrument_name: String,
 
     /// Initial filter cutoff frequency (0-127)
     /// The formula used is 110*2^(0.25+ce/fe), where ce is the cutoff frequency * (256 + 256) and fe is 24*512 or 20*512 if using OpenMPT's extended filter range.

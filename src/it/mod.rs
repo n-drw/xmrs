@@ -10,3 +10,4 @@ mod it_pattern;
 mod it_plugins;
 mod it_sample_header;
 mod it_x_names;
+mod serde_helper;
