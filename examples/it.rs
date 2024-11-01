@@ -6,7 +6,7 @@ struct Cli {
     #[arg(
         short = 'f',
         long,
-        default_value = "example.it",
+        required = true,
         value_name = "filename"
     )]
     filename: Option<String>,
