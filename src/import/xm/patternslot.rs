@@ -5,10 +5,8 @@ use bincode::error::DecodeError;
 
 use alloc::vec::Vec;
 
-pub type XmPatternSlot = PatternSlot;
-
-impl XmPatternSlot {
-    pub fn load(src: &[u8]) -> Result<(&[u8], XmPatternSlot), DecodeError> {
+impl PatternSlot {
+    pub fn load_xm(src: &[u8]) -> Result<(&[u8], PatternSlot), DecodeError> {
         let mut dst: [u8; 5] = [0; 5];
         let mut i = 0;
         let mut j = 0;
@@ -68,11 +66,11 @@ impl XmPatternSlot {
 
         Ok((
             &src[i..],
-            XmPatternSlot {
+            PatternSlot {
                 note: {
                     if dst[0] == 97 {
                         // Special case: we don't want to use 97, because we want more octaves...
-                        Pitch::KeyOff
+                        Pitch::Off
                     } else if dst[0] == 0 {
                         // Special case: we don't want to use 0, because we want full MIDI compatibility...
                         Pitch::None
@@ -83,7 +81,13 @@ impl XmPatternSlot {
                         }
                     }
                 },
-                instrument: dst[1],
+                instrument: {
+                    if dst[1] != 0 {
+                        Some(dst[1] as usize - 1)
+                    } else {
+                        None
+                    }
+                },
                 volume: dst[2],
                 effect_type: dst[3],
                 effect_parameter: dst[4],
@@ -91,7 +95,7 @@ impl XmPatternSlot {
         ))
     }
 
-    pub fn save_unpack(&self) -> Vec<u8> {
+    pub fn save_xm_unpack(&self) -> Vec<u8> {
         let mut bytes: [u8; 5] = [0; 5];
         bytes[0] = {
             if self.note.is_keyoff() {
@@ -100,14 +104,20 @@ impl XmPatternSlot {
                 self.note.value() + 1
             }
         };
-        bytes[1] = self.instrument;
+        bytes[1] = {
+            if let Some(instr) = self.instrument {
+                instr as u8 - 1
+            } else {
+                0
+            }
+        };
         bytes[2] = self.volume;
         bytes[3] = self.effect_type;
         bytes[4] = self.effect_parameter;
         return bytes.to_vec();
     }
 
-    pub fn save(&self) -> Vec<u8> {
+    pub fn save_xm(&self) -> Vec<u8> {
         let mut bytes: [u8; 5] = [0; 5];
         bytes[0] = {
             if self.note.is_keyoff() {
@@ -116,7 +126,13 @@ impl XmPatternSlot {
                 self.note.value() + 1
             }
         };
-        bytes[1] = self.instrument;
+        bytes[1] = {
+            if let Some(instr) = self.instrument {
+                instr as u8 - 1
+            } else {
+                0
+            }
+        };
         bytes[2] = self.volume;
         bytes[3] = self.effect_type;
         bytes[4] = self.effect_parameter;

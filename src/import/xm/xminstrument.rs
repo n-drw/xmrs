@@ -9,10 +9,11 @@ use alloc::{vec, vec::Vec};
 
 use crate::envelope::{Envelope, EnvelopePoint};
 use crate::instr_default::InstrDefault;
-use crate::instr_vibrato::{InstrVibrato, Waveform};
+use crate::instr_vibrato::InstrVibrato;
 use crate::instrument::{Instrument, InstrumentType};
 use crate::module::Module;
 use crate::sample::Sample;
+use crate::waveform::Waveform;
 
 use crate::instr_midi::InstrMidi;
 
@@ -158,7 +159,12 @@ impl XmInstrDefault {
                     xmid.panning_flag |= 0b0100;
                 }
 
-                xmid.vibrato_type = id.vibrato.waveform.try_into().unwrap();
+                xmid.vibrato_type = match id.vibrato.waveform {
+                    Waveform::TranslatedSquare => 1,
+                    Waveform::TranslatedRampUp => 2,
+                    Waveform::TranslatedRampDown => 3,
+                    _ => 0,
+                };
                 xmid.vibrato_sweep = (id.vibrato.sweep * 255.0) as u8;
                 xmid.vibrato_depth = (id.vibrato.depth * 15.0 * 2.0) as u8;
                 xmid.vibrato_rate = (id.vibrato.speed * 63.0 * 4.0) as u8;
@@ -452,11 +458,10 @@ impl XmInstrument {
                 {
                     let v = &mut id.vibrato;
                     v.waveform = match xmi.vibrato_type & 3 {
-                        0 => Waveform::Sine,
-                        1 => Waveform::Square,
-                        2 => Waveform::RampUp,
-                        3 => Waveform::RampDown,
-                        _ => Waveform::Sine,
+                        1 => Waveform::TranslatedSquare,
+                        2 => Waveform::TranslatedRampUp,
+                        3 => Waveform::TranslatedRampDown,
+                        _ => Waveform::TranslatedSine,
                     };
                     v.speed = xmi.vibrato_rate as f32 / 63.0 / 4.0;
                     v.depth = xmi.vibrato_depth as f32 / 15.0 / 2.0;

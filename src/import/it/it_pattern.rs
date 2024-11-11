@@ -3,7 +3,7 @@ use alloc::vec::Vec;
 use bincode::error::DecodeError;
 use serde::Deserialize;
 
-use crate::prelude::PatternSlot;
+use crate::patternslot::PatternSlot;
 
 /// Structure representing a pattern in a musical tracker format.
 /// Note: The entire `Pattern` struct is limited to a maximum size of 0xFFFF (64 kilobytes).
@@ -98,7 +98,12 @@ impl ItPattern {
                 }
 
                 if mask_variable & 0x02 != 0 {
-                    slot.instrument = *data_iter.next().ok_or(DecodeError::LimitExceeded)?;
+                    let instr = *data_iter.next().ok_or(DecodeError::LimitExceeded)?;
+                    slot.instrument = if instr != 0 {
+                        Some(instr as usize - 1)
+                    } else {
+                        None
+                    };
                 } else if mask_variable & 0x20 != 0 && row > 0 {
                     slot.instrument = result[row - 1][channel as usize].instrument;
                 }

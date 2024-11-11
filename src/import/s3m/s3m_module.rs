@@ -9,7 +9,7 @@ use alloc::string::String;
 use alloc::string::ToString;
 use alloc::{vec, vec::Vec};
 
-use crate::s3m::s3m_effect::S3mEffect;
+use super::s3m_effect::S3mEffect;
 
 #[repr(C)]
 #[derive(Default, Deserialize, Debug)]
@@ -459,7 +459,7 @@ impl S3mModule {
             if k < packed_data.len() {
                 let note = packed_data[k];
                 slot.note = match note {
-                    254 => Pitch::KeyOff,
+                    254 => Pitch::Off,
                     255 => Pitch::None,
                     _ => {
                         let tmp_pitch = (note & 0xF) + (note >> 4) * 12;
@@ -474,7 +474,11 @@ impl S3mModule {
             }
 
             if k < packed_data.len() {
-                slot.instrument = packed_data[k];
+                slot.instrument = if packed_data[k] != 0 {
+                    Some(packed_data[k] as usize - 1)
+                } else {
+                    None
+                };
                 k += 1;
             }
         }

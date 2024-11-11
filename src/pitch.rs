@@ -154,7 +154,7 @@ pub enum Pitch {
     /// Cut Note
     Cut = 254, // Like IT, not like S3M.
     /// Stop note, or Fadout
-    KeyOff = 255, // Like IT, not like XM (97)
+    Off = 255, // Like IT, not like XM (97)
 }
 
 impl Debug for Pitch {
@@ -292,7 +292,7 @@ impl Debug for Pitch {
             Pitch::B9 => "B-9",
 
             Pitch::None => "---",
-            Pitch::KeyOff => "===",
+            Pitch::Off => "===",
             Pitch::Cut => "^^^",
         };
         write!(f, "{}", text)
@@ -307,7 +307,7 @@ impl Pitch {
 
     #[inline(always)]
     pub fn is_keyoff(&self) -> bool {
-        *self == Self::KeyOff
+        *self == Self::Off
     }
 
     #[inline(always)]

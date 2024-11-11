@@ -27,7 +27,7 @@ impl PatternHelper {
     fn get_track(&self, _track_index: usize, source: &Vec<u8>) -> Vec<PatternSlot> {
         let mut track: Vec<PatternSlot> = vec![];
         let mut index: usize = 0;
-        let mut last_instr = 0;
+        let mut last_instr: Option<usize> = None;
 
         while source[index] != 255 {
             let mut current = PatternSlot::default();
@@ -43,7 +43,7 @@ impl PatternHelper {
                     match self.version {
                         10 => {
                             if source[index] & 0b1000_0000 == 0 {
-                                current.instrument = 1 + source[index] & 0b0111_1111;
+                                current.instrument = Some((source[index] & 0b0111_1111) as usize);
                                 last_instr = current.instrument;
                             } else {
                                 // FIXME: can be E1 or E2?
@@ -60,13 +60,13 @@ impl PatternHelper {
                         }
                         15 => {
                             if source[index] & 0b1000_0000 == 0 {
-                                current.instrument = 1 + source[index] & 0b0111_1111;
+                                current.instrument = Some((source[index] & 0b0111_1111) as usize);
                                 last_instr = current.instrument;
                             }
                         }
                         _ => {
                             if source[index] & 0b1000_0000 == 0 {
-                                current.instrument = 1 + source[index] & 0b0111_1111;
+                                current.instrument = Some((source[index] & 0b0111_1111) as usize);
                                 last_instr = current.instrument;
                             } else {
                                 if index + 2 >= source.len() {

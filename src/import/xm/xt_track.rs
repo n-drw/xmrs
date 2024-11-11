@@ -1,4 +1,4 @@
-use crate::prelude::PatternSlot;
+use crate::patternslot::PatternSlot;
 use alloc::{vec, vec::Vec};
 
 pub struct XtTrack;
@@ -14,7 +14,7 @@ impl XtTrack {
         );
         data.append(&mut bincode::serde::encode_to_vec(&nrow, bincode::config::legacy()).unwrap());
         for xmps in track {
-            let mut d = xmps.save_unpack();
+            let mut d = xmps.save_xm_unpack();
             data.append(&mut d);
         }
         data

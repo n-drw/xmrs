@@ -1,4 +1,4 @@
-use crate::prelude::PatternSlot;
+use crate::patternslot::PatternSlot;
 use alloc::{vec, vec::Vec};
 
 pub struct XpPattern;
@@ -21,7 +21,7 @@ impl XpPattern {
 
         for row in pattern {
             for ps in row {
-                let mut d = ps.save_unpack();
+                let mut d = ps.save_xm_unpack();
                 data.append(&mut d);
             }
         }

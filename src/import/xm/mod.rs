@@ -5,11 +5,11 @@
 mod helper;
 mod serde_helper;
 
+pub mod patternslot;
 pub mod xmheader;
 pub mod xminstrument;
 pub mod xmmodule;
 pub mod xmpattern;
-pub mod xmpatternslot;
 pub mod xmsample;
 
 pub mod xi_instrument;

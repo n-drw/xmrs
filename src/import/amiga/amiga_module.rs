@@ -1,5 +1,5 @@
-use crate::amiga::amiga_sample::AmigaSample;
-use crate::amiga::element::*;
+use super::amiga_sample::AmigaSample;
+use super::patternslot::PatternSlot;
 use bincode::error::DecodeError;
 
 use crate::prelude::*;
@@ -16,7 +16,7 @@ pub struct AmigaModule {
     restart_position: u8,
     positions: Vec<u8>, // 128
     tag: String,
-    patterns: Vec<Vec<Vec<Element>>>, // pattern, row, element
+    patterns: Vec<Pattern>, // pattern, row, element
     audio: Vec<Vec<i8>>,
 }
 
@@ -97,12 +97,12 @@ impl AmigaModule {
 
         let number_of_patterns = amiga.get_number_of_patterns();
         for _p in 0..number_of_patterns {
-            let mut pattern: Vec<Vec<Element>> = vec![];
+            let mut pattern: Pattern = vec![];
             for _row in 0..64 {
-                let mut row: Vec<Element> = vec![];
+                let mut row: Row = vec![];
                 for _elt in 0..number_of_tracks {
                     let e = u32::from_be_bytes([data[0], data[1], data[2], data[3]]);
-                    let element = Element::deserialize(e);
+                    let element = PatternSlot::deserialize(e);
                     row.push(element);
                     data = &data[4..];
                 }
@@ -144,25 +144,12 @@ impl AmigaModule {
         return instr;
     }
 
-    fn amiga_to_module_pattern(p: &Vec<Vec<Element>>) -> Pattern {
+    fn amiga_to_module_pattern(p: &Pattern) -> Pattern {
         let mut dp: Pattern = vec![];
         for row in p {
             let mut new_row: Row = vec![];
             for e in row {
-                let note: Pitch = if e.note == 0 {
-                    Pitch::None
-                } else {
-                    Pitch::try_from(e.note - 1).unwrap_or(Pitch::None)
-                };
-
-                let ps = PatternSlot {
-                    note,
-                    instrument: e.instrument,
-                    volume: 0,
-                    effect_type: e.effect,
-                    effect_parameter: e.data,
-                };
-                new_row.push(ps);
+                new_row.push(e.clone());
             }
             dp.push(new_row);
         }
@@ -184,7 +171,7 @@ impl AmigaModule {
             .collect();
 
         for p in &self.patterns {
-            let p2 = Self::amiga_to_module_pattern(p);
+            let p2 = p.clone();
             module.pattern.push(p2);
         }
 

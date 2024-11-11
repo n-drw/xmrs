@@ -28,7 +28,7 @@ pub struct ItModule {
     message: String,
     instruments: Vec<ItInstrument>,
     samples_header: Vec<ItSampleHeader>,
-    patterns: Vec<Vec<Vec<PatternSlot>>>,
+    patterns: Vec<Pattern>,
     samples: Vec<Option<SampleDataType>>,
 }
 
@@ -224,7 +224,7 @@ impl ItModule {
 
         // === Patterns =====================================================
 
-        let mut patterns: Vec<Vec<Vec<PatternSlot>>> = vec![];
+        let mut patterns: Vec<Pattern> = vec![];
         for pattern_seek in &pattern_offsets {
             if ser_it_module.len() < *pattern_seek as usize {
                 return Err(DecodeError::LimitExceeded);

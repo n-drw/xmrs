@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
 
-pub mod element;
+pub mod patternslot;
 pub mod serde_helper;
 
 pub mod amiga_module;

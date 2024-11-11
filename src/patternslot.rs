@@ -9,9 +9,7 @@ use serde::{Deserialize, Serialize};
 #[repr(C)]
 pub struct PatternSlot {
     pub note: Pitch,
-    /// 0: none, 1-128
-    pub instrument: u8,
-    /// 0..64, 255
+    pub instrument: Option<usize>,
     pub volume: u8,
     pub effect_type: u8,
     pub effect_parameter: u8,
@@ -21,7 +19,7 @@ impl Default for PatternSlot {
     fn default() -> Self {
         PatternSlot {
             note: Pitch::None,
-            instrument: 0,
+            instrument: None,
             volume: 0,
             effect_type: 0,
             effect_parameter: 0,
@@ -36,10 +34,10 @@ impl Debug for PatternSlot {
         } else {
             core::char::from_digit(u32::from(self.volume & 0x0f), 16).unwrap()
         };
-        let ninstr = if self.instrument == 0 {
-            "  ".to_string()
+        let ninstr = if let Some(instr) = self.instrument {
+            format!("{:>2X}", instr)
         } else {
-            format!("{:>2X}", self.instrument)
+            "  ".to_string()
         };
         write!(
             f,

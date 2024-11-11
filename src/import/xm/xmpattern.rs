@@ -5,8 +5,7 @@ use serde::{Deserialize, Serialize};
 use alloc::{vec, vec::Vec};
 
 use crate::module::Module;
-
-use super::xmpatternslot::XmPatternSlot;
+use crate::prelude::*;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct XmPatternHeader {
@@ -48,19 +47,17 @@ impl XmPatternHeader {
     }
 }
 
-type Lines = Vec<Vec<XmPatternSlot>>;
-
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct XmPattern {
     pub header: XmPatternHeader,
-    pub pattern: Lines,
+    pub pattern: Pattern,
 }
 
 impl XmPattern {
     pub fn new(rows: usize, noc: usize) -> Self {
         Self {
             header: XmPatternHeader::new(rows),
-            pattern: vec![vec![XmPatternSlot::default(); noc]; rows],
+            pattern: vec![vec![PatternSlot::default(); noc]; rows],
         }
     }
 
@@ -74,7 +71,7 @@ impl XmPattern {
         .unwrap();
         let seek = xmph.pattern_data_size as usize;
 
-        let xmp = XmPattern {
+        let xmp = Self {
             header: xmph,
             pattern: xmps,
         };
@@ -82,9 +79,9 @@ impl XmPattern {
         Ok((&data[seek..], xmp))
     }
 
-    fn get_empty_line(number_of_channels: usize) -> Vec<XmPatternSlot> {
-        let mut row: Vec<XmPatternSlot> = vec![];
-        let xmps = XmPatternSlot::default();
+    fn get_empty_line(number_of_channels: usize) -> Vec<PatternSlot> {
+        let mut row: Vec<PatternSlot> = vec![];
+        let xmps = PatternSlot::default();
         for _ in 0..number_of_channels {
             row.push(xmps.clone());
         }
@@ -95,16 +92,16 @@ impl XmPattern {
         data: &[u8],
         number_of_channels: usize,
         number_of_rows: usize,
-    ) -> Result<(&[u8], Vec<Vec<XmPatternSlot>>), DecodeError> {
-        let mut lines: Vec<Vec<XmPatternSlot>> = vec![];
-        let mut row: Vec<XmPatternSlot> = vec![];
+    ) -> Result<(&[u8], Vec<Vec<PatternSlot>>), DecodeError> {
+        let mut lines: Vec<Vec<PatternSlot>> = vec![];
+        let mut row: Vec<PatternSlot> = vec![];
 
         let mut d2 = data;
         loop {
             if d2.is_empty() {
                 break;
             }
-            let (d3, xps) = XmPatternSlot::load(d2)?;
+            let (d3, xps) = PatternSlot::load_xm(d2)?;
             d2 = d3;
             row.push(xps);
             if row.len() == number_of_channels {
@@ -141,7 +138,7 @@ impl XmPattern {
 
         for p in &self.pattern {
             for ps in p {
-                let mut b = ps.save();
+                let mut b = ps.save_xm();
                 p_output.append(&mut b);
             }
         }

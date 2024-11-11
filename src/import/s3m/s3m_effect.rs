@@ -13,7 +13,7 @@ pub struct S3mEffect {
     alastnfo: [u8; 32],
     alastefx: [u8; 32],
     alastvibnfo: [u8; 32],
-    s3m_last_g_instrument: [u8; 32],
+    s3m_last_g_instrument: [Option<usize>; 32],
 }
 
 impl S3mEffect {
@@ -22,7 +22,7 @@ impl S3mEffect {
             alastnfo: [0; 32],
             alastefx: [0; 32],
             alastvibnfo: [0; 32],
-            s3m_last_g_instrument: [0; 32],
+            s3m_last_g_instrument: [None; 32],
         }
     }
 
@@ -142,8 +142,16 @@ impl S3mEffect {
                 n.effect_type = 0x03;
 
                 // fix illegal slides (to new instruments)
-                if n.instrument != 0 && n.instrument != self.s3m_last_g_instrument[ii] {
-                    n.instrument = self.s3m_last_g_instrument[ii];
+                if let Some(instr) = n.instrument {
+                    if let Some(last_instr_g) = self.s3m_last_g_instrument[ii] {
+                        if instr != last_instr_g {
+                            n.instrument = if instr != 0 {
+                                Some(instr as usize - 1)
+                            } else {
+                                None
+                            };
+                        }
+                    }
                 }
             }
             11 => {
@@ -213,7 +221,7 @@ impl S3mEffect {
                         } else if n.effect_parameter == 0xD0 {
                             // ED0 prevents note/smp/vol from updating in ST3, remove everything
                             n.note = Pitch::None;
-                            n.instrument = 0;
+                            n.instrument = None;
                             n.volume = 0;
                             n.effect_type = 0;
                             n.effect_parameter = 0;
@@ -251,8 +259,10 @@ impl S3mEffect {
             }
         }
 
-        if n.instrument != 0 && n.effect_type != 0x3 {
-            self.s3m_last_g_instrument[ii] = n.instrument;
+        if let Some(instr) = n.instrument {
+            if n.effect_type != 0x3 {
+                self.s3m_last_g_instrument[ii] = n.instrument;
+            }
         }
     }
 }

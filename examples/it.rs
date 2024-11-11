@@ -3,12 +3,7 @@ use xmrs::it::it_module::ItModule;
 
 #[derive(Parser)]
 struct Cli {
-    #[arg(
-        short = 'f',
-        long,
-        required = true,
-        value_name = "filename"
-    )]
+    #[arg(short = 'f', long, required = true, value_name = "filename")]
     filename: Option<String>,
 
     /// Turn pattern informations on
