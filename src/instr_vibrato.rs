@@ -1,4 +1,3 @@
-use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
 
 use crate::waveform::Waveform;

@@ -1,3 +1,5 @@
+use alloc::string::String;
+use alloc::string::ToString;
 use bincode::error::DecodeError;
 use serde::Deserialize;
 use serde_big_array::BigArray;

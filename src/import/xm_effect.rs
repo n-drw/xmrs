@@ -153,7 +153,7 @@ impl XmEffect {
                 let effect_case = current.effect_parameter >> 4;
                 let param = current.effect_parameter & 0x0F;
 
-                return match current.effect_parameter >> 4 {
+                return match effect_case {
                     1 => {
                         // X1y: Extra fine portamento up
                         Some(TrackEffect::Portamento(-(param as f32)))
@@ -247,8 +247,7 @@ impl XmEffect {
                 };
                 return Some(TrackEffect::TonePortamento(speed));
             }
-            others => {
-                println!("error: {}", others);
+            _ => {
                 return None;
             }
         }

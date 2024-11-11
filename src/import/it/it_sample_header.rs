@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use alloc::string::String;
 
 use bincode::error::DecodeError;
 

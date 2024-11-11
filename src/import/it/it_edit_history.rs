@@ -8,6 +8,13 @@ use bincode::Decode;
 use core::fmt;
 use serde::Deserialize;
 
+#[cfg(feature = "micromath")]
+#[allow(unused_imports)]
+use micromath::F32Ext;
+#[cfg(feature = "libm")]
+#[allow(unused_imports)]
+use num_traits::float::Float;
+
 #[derive(Deserialize, Default, Decode)]
 #[repr(C)]
 pub struct ItEditHistoryEntry {
@@ -57,7 +64,7 @@ impl ItEditHistoryEntry {
 
     /// Return Duration
     pub fn duration(&self) -> Duration {
-        let ticks = self.run_time as f64 / 18.2;
+        let ticks = self.run_time as f32 / 18.2;
         let seconds = ticks as u64;
         let nanoseconds = (ticks.fract() * 1e9) as u32;
         Duration::new(seconds, nanoseconds)
