@@ -1,8 +1,13 @@
-use crate::pitch::Pitch;
+use crate::{
+    pitch::Pitch,
+    prelude::{FrequencyType, TrackUnit},
+};
 use alloc::format;
 use alloc::string::ToString;
 use core::fmt::*;
 use serde::{Deserialize, Serialize};
+
+use super::xm_effect::XmEffect;
 
 /// A typical pattern slot
 #[derive(Serialize, Deserialize, Copy, Clone, Eq, Hash, PartialEq)]
@@ -140,5 +145,9 @@ impl PatternSlot {
             0x21 => 'X',
             _ => '0',
         }
+    }
+
+    pub fn to_track_unit(&self, freq_type: FrequencyType) -> TrackUnit {
+        XmEffect::unpack(freq_type, &self)
     }
 }

@@ -313,7 +313,7 @@ impl XmEffect {
         }
     }
 
-    pub fn unpack(freq_type: FrequencyType, current: &mut PatternSlot) -> TrackUnit {
+    pub fn unpack(freq_type: FrequencyType, current: &PatternSlot) -> TrackUnit {
         let te = Self::walk_effect(freq_type, current);
         let ve = Self::walk_volume(freq_type, current);
         let cc = Self::walk_control_change_effect(current);
@@ -327,6 +327,9 @@ impl XmEffect {
         if let Some(e) = ve {
             tu.effects.push(e);
         }
+
+        // TODO: one day clean up the effects to remove redundancies by grouping them together (eg. Volume...)
+
         if let Some(c) = cc {
             tu.cc_effects.push(c);
         }

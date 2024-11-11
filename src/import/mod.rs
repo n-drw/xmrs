@@ -2,12 +2,6 @@
 
 /// A typical pattern slot
 pub mod patternslot;
-
-#[cfg(any(
-    feature = "import_amiga",
-    feature = "import_s3m",
-    feature = "import_xm",
-))]
 pub mod xm_effect;
 
 /// Load and Save Historical XM files

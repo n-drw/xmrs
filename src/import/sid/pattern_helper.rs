@@ -1,5 +1,5 @@
-use crate::prelude::*;
 use crate::import::patternslot::PatternSlot;
+use crate::prelude::*;
 use alloc::{vec, vec::Vec};
 
 #[derive(Debug)]
