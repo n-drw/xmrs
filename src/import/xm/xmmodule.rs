@@ -9,6 +9,7 @@ use super::xmheader::{XmFlagType, XmHeader};
 use super::xminstrument::XmInstrument;
 use super::xmpattern::XmPattern;
 
+use crate::import::xm_effect::XmEffect;
 use crate::module::Module;
 use crate::period_helper::FrequencyType;
 
@@ -82,6 +83,7 @@ impl XmModule {
         for p in &self.pattern {
             module.pattern.push(p.pattern.clone());
         }
+        module.pattern2 = XmEffect::unpack_patterns(FrequencyType::AmigaFrequencies, &module.pattern);
 
         for i in &self.instrument {
             module.instrument.push(i.to_instrument())

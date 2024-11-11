@@ -2,6 +2,7 @@ use super::patternslot::PatternSlot;
 use crate::effect::TrackEffect;
 use crate::prelude::*;
 use crate::track_unit::TrackUnit;
+use alloc::vec::Vec;
 
 pub struct XmEffect;
 
@@ -335,4 +336,23 @@ impl XmEffect {
         }
         tu
     }
+
+    pub fn unpack_row(freq_type: FrequencyType, row: &Vec<PatternSlot>) -> Vec<TrackUnit> {
+        row.iter().map(|pattern_slot| {
+            XmEffect::unpack(freq_type, &pattern_slot)
+        }).collect()
+    }
+
+    pub fn unpack_pattern(freq_type: FrequencyType, pattern: &Vec<Vec<PatternSlot>>) -> Vec<Vec<TrackUnit>> {
+        pattern.iter().map(|row| {
+            XmEffect::unpack_row(freq_type, &row)
+        }).collect()
+    }
+
+    pub fn unpack_patterns(freq_type: FrequencyType, patterns: &Vec<Vec<Vec<PatternSlot>>>) -> Vec<Vec<Vec<TrackUnit>>> {
+        patterns.iter().map(|pattern| {
+            XmEffect::unpack_pattern(freq_type, &pattern)
+        }).collect()
+    }
+
 }

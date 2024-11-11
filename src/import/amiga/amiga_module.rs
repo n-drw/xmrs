@@ -2,6 +2,7 @@ use super::amiga_sample::AmigaSample;
 use super::patternslot::PatternSlot;
 use bincode::error::DecodeError;
 
+use crate::import::xm_effect::XmEffect;
 use crate::prelude::*;
 
 use alloc::string::String;
@@ -169,11 +170,8 @@ impl AmigaModule {
             .iter()
             .map(|&x| x as usize)
             .collect();
-
-        for p in &self.patterns {
-            let p2 = p.clone();
-            module.pattern.push(p2);
-        }
+        module.pattern = self.patterns.clone();
+        module.pattern2 = XmEffect::unpack_patterns(FrequencyType::AmigaFrequencies, &self.patterns);
 
         for i in 0..self.samples.len() {
             let instr = self.to_instr(i);
