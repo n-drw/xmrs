@@ -322,11 +322,11 @@ impl XmEffect {
         let mut tu = TrackUnit::default();
         tu.note = current.note;
         tu.instrument = current.instrument;
-        if let Some(e) = te {
-            tu.effects.push(e)
-        }
         if let Some(e) = ve {
             tu.effects.push(e);
+        }
+        if let Some(e) = te {
+            tu.effects.push(e)
         }
 
         // TODO: one day clean up the effects to remove redundancies by grouping them together (eg. Volume...)
