@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
 
+use crate::import::patternslot::PatternSlot;
 use crate::instrument::Instrument;
-use crate::patternslot::PatternSlot;
 use crate::period_helper::FrequencyType;
+use crate::prelude::TrackUnit;
 
 use alloc::string::String;
 use alloc::string::ToString;
@@ -36,6 +37,8 @@ pub struct Module {
     /// Defines the exact order for the patterns playback
     pub pattern_order: Vec<usize>,
     pub pattern: Vec<Pattern>,
+    pub pattern2: Vec<Vec<Vec<TrackUnit>>>,
+
     /// Instrument 1 has index 0, instrument 2 has index 1, etc.
     pub instrument: Vec<Instrument>,
 }
@@ -51,6 +54,7 @@ impl Default for Module {
             default_bpm: 125,
             pattern_order: vec![],
             pattern: vec![],
+            pattern2: vec![],
             instrument: vec![],
         }
     }

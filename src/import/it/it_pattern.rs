@@ -4,7 +4,7 @@ use alloc::vec::Vec;
 use bincode::error::DecodeError;
 use serde::Deserialize;
 
-use crate::patternslot::PatternSlot;
+use crate::import::patternslot::PatternSlot;
 
 /// Structure representing a pattern in a musical tracker format.
 /// Note: The entire `Pattern` struct is limited to a maximum size of 0xFFFF (64 kilobytes).

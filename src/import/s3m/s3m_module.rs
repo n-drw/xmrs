@@ -3,6 +3,7 @@ use bincode;
 use bincode::error::DecodeError;
 use serde::Deserialize;
 
+use crate::import::patternslot::PatternSlot;
 use crate::prelude::*;
 
 use alloc::string::String;

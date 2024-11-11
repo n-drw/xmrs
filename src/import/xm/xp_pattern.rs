@@ -1,4 +1,4 @@
-use crate::patternslot::PatternSlot;
+use crate::import::patternslot::PatternSlot;
 use alloc::{vec, vec::Vec};
 
 pub struct XpPattern;

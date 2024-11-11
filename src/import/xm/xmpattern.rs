@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use alloc::{vec, vec::Vec};
 
+use crate::import::patternslot::PatternSlot;
 use crate::module::Module;
 use crate::prelude::*;
 

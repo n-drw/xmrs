@@ -47,8 +47,6 @@ pub mod instr_vibrato;
 pub mod instrument;
 /// SoundTracker Module with Steroid
 pub mod module;
-/// A typical pattern slot
-pub mod patternslot;
 /// Period Helper
 pub mod period_helper;
 pub(crate) mod period_helper_cache;
@@ -64,14 +62,14 @@ pub mod waveform;
 /// The Xmrs Prelude
 pub mod prelude;
 
-#[cfg(any(
-    feature = "import",
-    feature = "import_amiga",
-    feature = "import_it",
-    feature = "import_s3m",
-    feature = "import_sid",
-    feature = "import_xm",
-))]
+// #[cfg(any(
+//     feature = "import",
+//     feature = "import_amiga",
+//     feature = "import_it",
+//     feature = "import_s3m",
+//     feature = "import_sid",
+//     feature = "import_xm",
+// ))]
 pub mod import;
 
 #[cfg(test)]

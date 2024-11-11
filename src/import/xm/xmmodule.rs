@@ -75,6 +75,7 @@ impl XmModule {
             default_bpm: self.header.default_bpm,
             pattern_order: self.pattern_order.iter().map(|&x| x as usize).collect(),
             pattern: vec![],
+            pattern2: vec![],
             instrument: vec![],
         };
 

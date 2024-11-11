@@ -1,4 +1,4 @@
-pub use crate::patternslot::PatternSlot;
+pub use crate::import::patternslot::PatternSlot;
 use crate::pitch::Pitch;
 
 impl PatternSlot {

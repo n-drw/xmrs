@@ -1,5 +1,8 @@
 #![forbid(unsafe_code)]
 
+/// A typical pattern slot
+pub mod patternslot;
+
 #[cfg(any(
     feature = "import_amiga",
     feature = "import_s3m",

@@ -19,7 +19,6 @@ pub use crate::{
     instr_vibrato::InstrVibrato,
     instrument::{Instrument, InstrumentType},
     module::{Module, Pattern, Row, MAX_NUM_ROWS},
-    patternslot::PatternSlot,
     period_helper::{FrequencyType, PeriodHelper},
     pitch::Pitch,
     sample::{LoopType, Sample, SampleDataType},

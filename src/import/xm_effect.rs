@@ -1,3 +1,4 @@
+use super::patternslot::PatternSlot;
 use crate::effect::TrackEffect;
 use crate::prelude::*;
 use crate::track_unit::TrackUnit;

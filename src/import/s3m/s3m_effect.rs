@@ -6,6 +6,7 @@ use alloc::vec::Vec;
  *   BSD-3-Clause license
  *
  */
+use crate::import::patternslot::PatternSlot;
 use crate::prelude::*;
 
 #[derive(Debug)]
