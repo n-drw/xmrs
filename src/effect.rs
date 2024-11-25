@@ -8,116 +8,261 @@ use micromath::F32Ext;
 #[allow(unused_imports)]
 use num_traits::float::Float;
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[repr(u8)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum TrackEffect {
     /// `(1st halftone, 2nd halftone)`
-    /// F / XM0=0(0), XM=0(0)
-    Arpeggio((f32, f32)),
-    /// `bool`, round to the nearest halftone when using effects
-    /// F / XM0=0xE3(E3)
-    Glissando(bool),
-    /// `tune`, this effet should be used together with a note.
-    /// It will cause another fine-tune value to be used
-    /// F / XM0=0xE5(E5)
-    InstrumentFineTune(f32),
-    /// `position`, change the panning envelope position
-    /// P / XM0=0x15(L) (if instr.sustained)
-    InstrumentPanningEnvelopePosition(usize),
-    /// `offset`, this effect should be used together with a note
-    /// The sample will be played from `offset` instead of zero
-    /// XM0=9(9)
-    InstrumentSampleOffset(usize),
-    /// `position`, change the volume envelope position
-    /// V / XM0=0x15(L)
-    InstrumentVolumeEnvelopePosition(usize),
-    /// `(speed, vol)` or (Interval, Volume Change)
-    /// Extended version of the `TrackEffect::NoteRetrig` effect
-    /// V / XM0=0x1B(R), XM=0x1B(R)
-    MultiRetrigNote((usize, f32)),
-    /// `tick`, cut the note at the specified tick.
-    /// Note that it will only set the volume to zero, and the sample will still be played.
-    /// V / XM=0xEC(EC)
-    NoteCut(usize),
-    /// `ticks`, this effect will delay the note the selected number of ticks
-    /// XM0=0xED(ED), XM=0xED(ED)
-    NoteDelay(usize),
-    /// `tick`, this effect will trigger a "Note Off" at the specified tick
-    /// XM0=0x14(K), XM=0x14(K)
-    NoteOff(usize),
-    /// `interval`, this effect will retrigs the note with the specified interval
-    /// V / XM0=0xE9(E9), XM=0xE9(E9)
-    NoteRetrig(usize),
+    /// Pitch
+    Arpeggio(f32, f32),
+
     /// `position` [0.0..1.0], sets the panning position for the channel
     /// 0.0 is the leftmost position and 1.0 the rightmost
-    /// P / XM0=8(8), XM0=v0xC(vP)
-    Panning(f32),
+    /// Panning
+    ChannelPanning(f32),
+
     /// `speed`, this effect slide the panning position
-    /// P / XM0=0x19(P), XM=0x19(P), XM0=v0xD(L), XM0=v0xE(R)
-    PanningSlide(f32),
+    /// Panning
+    ChannelPanningSlide(f32),
+
+    /// `value`, set the Channel Volume
+    /// Channel Volume
+    ChannelVolume(f32),
+
+    /// `value`, slide the Channel Volume
+    /// Channel Volume
+    ChannelVolumeSlide(f32),
+
+    /// `bool`, round to the nearest halftone when using effects
+    /// Pitch
+    Glissando(bool),
+
+    /// `tune`, this effet should be used together with a note.
+    /// It will cause another fine-tune value to be used
+    /// Pitch
+    InstrumentFineTune(f32),
+
+    /// `position`, change the panning envelope position
+    /// Panning
+    InstrumentPanningEnvelopePosition(usize),
+
+    /// `offset`, this effect should be used together with a note
+    /// The sample will be played from `offset` instead of zero
+    /// Misc
+    InstrumentSampleOffset(usize),
+
+    /// `position`, change the volume envelope position
+    /// Volume
+    InstrumentVolumeEnvelopePosition(usize),
+
+    /// `tick`, cut the note at the specified tick.
+    /// Note that it will only set the volume to zero, and the sample will still be played.
+    /// Volume
+    NoteCut(usize),
+
+    /// `ticks`, this effect will delay the note the selected number of ticks
+    /// Misc
+    NoteDelay(usize),
+
+    /// `tick`, this effect will trigger a "Note Off" at the specified tick
+    /// Misc
+    NoteOff(usize),
+
+    /// `interval`, this effect will retrigs the note with the specified interval
+    /// Misc
+    NoteRetrig(usize),
+
+    /// `(interval, volume change)`
+    /// Extended version of the `TrackEffect::NoteRetrig` effect
+    /// Misc
+    NoteRetrigExtended(usize, f32),
+
+    /// `(speed, depth)`, set Panbrello
+    /// Panning
+    Panbrello(f32, f32),
+
+    /// `(waveform, retrig)`, change Panbrello waveform.
+    /// `retrig` to true to retrig when a new instrument is played.
+    /// Panning
+    PanbrelloWaveform(Waveform, bool),
+
     /// `speed`
-    /// F / XM0=1(1), XM=1(1), XM0=2(2), XM=2(2), XM0=0xE1(E1), XM0=0xE2(E2), XM0=0x21(X1), XM=0x21(X2)
+    /// Pitch
     Portamento(f32),
-    /// `speed`, see `ControlChangeEffect::Glissando` to round to the nearest halftone
-    /// F / XM0=3(3), XM=3(3), XM0=5x?(5), XM=5x?(5), XM0=v0xF(vM), XM=v0xF(vM)
+
+    /// `speed`, portamento to note at speed.
+    /// see `ControlChangeEffect::Glissando` to round to the nearest halftone
+    /// Pitch
     TonePortamento(f32),
+
     /// `(speed, depth)`, see `ControlChangeEffect::Waveform` to change waveform
-    /// V / XM0=7(7), XM=7(7)
-    Tremolo((f32, f32)),
+    /// Volume
+    Tremolo(f32, f32),
+
     /// `(waveform, retrig)`, change Tremolo waveform.
     /// `retrig` to true to retrig when a new instrument is played.
-    /// V / XM0=0xE7(E7)
-    TremoloWaveform((Waveform, bool)),
+    /// Volume
+    TremoloWaveform(Waveform, bool),
+
     /// `(On time, Off time)`
     /// This weird effect will set the volume to zero during `Off time` number of ticks
-    /// V / XM0=0x1D(T), XM=0x1D(T)
-    Tremor((usize, usize)),
+    /// Volume
+    Tremor(usize, usize),
+
     /// `(speed, depth)`, set Vibrato
-    /// F / XM0=4(4), XM=4(4), XM0=6x?(6), XM=6x?(6), XM=v0xB(vV)
-    Vibrato((f32, f32)),
+    /// Pitch
+    Vibrato(f32, f32),
+
     /// `speed`, set Vibrato speed
-    /// F / XM0=v0xA(S)
+    /// Pitch
     VibratoSpeed(f32),
+
     /// `depth`, set Vibrato depth
-    /// F / XM0=v0xB(V) FIXME?
+    /// Pitch
     VibratoDepth(f32),
+
     /// `(waveform, retrig)`, change Vibrato waveform.
     /// `retrig` to true to retrig when a new instrument is played.
-    /// F / XM0=0xE4(E4)
-    VibratoWaveform((Waveform, bool)),
+    /// Pitch
+    VibratoWaveform(Waveform, bool),
+
     /// `(value, tick)`, sets the current volume at the current tick
-    /// V / XM0=C(C), XM0=vV1..5(V)
-    Volume((f32, usize)),
-    /// `(speed, tick0)`, slides the current volume up or down
-    /// if tick0, slide only once at tick0, else at every tick
-    /// V / XM0=5?y(5), XM=5?y(5), XM0=6?y(6), XM=6?y(6), XM=0xA(A), XM0=0xEA(EA), XM0=0xEB(EB), XM=v6(v6), XM=v7(v7), XM0=v8(v8), XM0=v9(v9)
-    VolumeSlide((f32, bool)),
+    /// Volume
+    Volume(f32, usize),
+
+    /// `(speed, tick)`, slides the current volume up or down
+    /// if tick is true, only at tick0, otherwise from tick1
+    /// Volume
+    VolumeSlide(f32, bool),
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
-pub enum ControlChangeEffect {
+#[repr(u8)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum GlobalEffect {
     /// `bpm` set the BPM of the song
-    /// XM=0x0F(F)
-    Bpm(usize),
+    Bpm(usize) = 0x0F,
+
     /// `pattern-position`, jump to the next pattern and play from the specified position.
-    /// XM=0xD(D)
-    PatternBreak(usize),
-    /// `notes`, this effect will delay the pattern the selected nubre of notes.
-    /// XM=0xEE(EE)
-    PatternDelay(usize),
+    PatternBreak(usize) = 0x0D,
+
+    /// `notes`, this effect will delay the pattern the selected number of notes.
+    PatternDelay(usize) = 0xEE,
+
     /// `count`, if count is zero, the beginning of the loop will be specified
     /// When a non-zero value is used, the pattern will be looped from the loop start.
-    /// XM=0xE6(E6)
-    PatternLoop(usize),
+    PatternLoop(usize) = 0xE6,
+
     /// `position`, jump to the selected song position and play the pattern from the beginning
-    /// 0x0B(B)
-    PositionJump(usize),
+    PositionJump(usize) = 0x0B,
+
     /// `speed` set the speed of the song
-    /// XM=0x0F(F)
-    Speed(usize),
+    Tempo(usize) = 0xFF,
+
+    /// `value` slide the tempo by x BPM on every tick of the row except the first
+    TempoSlide(f32) = 0xF0,
+
     /// `value`, set the global Volume
-    /// V / XM=0x10(G)
-    Volume(f32),
+    Volume(f32) = 0x10,
+
     /// `value`, slide the global Volume
-    /// V / XM=0x11(H)
-    VolumeSlide(f32),
+    VolumeSlide(f32) = 0x11,
+}
+
+impl TrackEffect {
+    pub fn merge(&self, other: &Self) -> Option<Self> {
+        match (self, other) {
+            (TrackEffect::Arpeggio(h1, h2), TrackEffect::Arpeggio(o1, o2)) => {
+                Some(TrackEffect::Arpeggio(h1 + o1, h2 + o2))
+            }
+            (TrackEffect::ChannelPanning(h1), TrackEffect::ChannelPanning(o1)) => {
+                Some(TrackEffect::ChannelPanning(h1 + o1))
+            }
+            (TrackEffect::ChannelPanningSlide(h1), TrackEffect::ChannelPanningSlide(o1)) => {
+                Some(TrackEffect::ChannelPanningSlide(h1 + o1))
+            }
+            (TrackEffect::ChannelVolume(value1), TrackEffect::ChannelVolume(value2)) => Some(
+                TrackEffect::ChannelVolume((value1 + value2).clamp(0.0, 1.0)),
+            ),
+            (
+                TrackEffect::ChannelVolumeSlide(speed1),
+                TrackEffect::ChannelVolumeSlide(speed2),
+            ) => {
+                Some(TrackEffect::ChannelVolumeSlide(speed1 + speed2))
+            }
+            (TrackEffect::Glissando(_h1), TrackEffect::Glissando(o1)) => {
+                Some(TrackEffect::Glissando(*o1)) // overwrite glissando value.
+            }
+            (TrackEffect::InstrumentFineTune(h1), TrackEffect::InstrumentFineTune(o1)) => {
+                Some(TrackEffect::InstrumentFineTune(h1 + o1))
+            }
+            (
+                TrackEffect::InstrumentPanningEnvelopePosition(h1),
+                TrackEffect::InstrumentPanningEnvelopePosition(o1),
+            ) => Some(TrackEffect::InstrumentPanningEnvelopePosition(h1 + o1)),
+            (TrackEffect::InstrumentSampleOffset(h1), TrackEffect::InstrumentSampleOffset(o1)) => {
+                Some(TrackEffect::InstrumentSampleOffset(h1 + o1))
+            }
+            (
+                TrackEffect::InstrumentVolumeEnvelopePosition(h1),
+                TrackEffect::InstrumentVolumeEnvelopePosition(o1),
+            ) => Some(TrackEffect::InstrumentVolumeEnvelopePosition(h1 + o1)),
+            (TrackEffect::NoteCut(h1), TrackEffect::NoteCut(o1)) => {
+                Some(TrackEffect::NoteCut(h1 + o1))
+            }
+            (TrackEffect::NoteDelay(h1), TrackEffect::NoteDelay(o1)) => {
+                Some(TrackEffect::NoteDelay(h1 + o1))
+            }
+            (TrackEffect::NoteOff(h1), TrackEffect::NoteOff(o1)) => {
+                Some(TrackEffect::NoteOff(h1 + o1))
+            }
+            (TrackEffect::NoteRetrig(h1), TrackEffect::NoteRetrig(o1)) => {
+                Some(TrackEffect::NoteRetrig(h1 + o1))
+            }
+            (TrackEffect::NoteRetrigExtended(h1, h2), TrackEffect::NoteRetrigExtended(o1, o2)) => {
+                Some(TrackEffect::NoteRetrigExtended(h1 + o1, h2 + o2))
+            }
+            (TrackEffect::Panbrello(h1, h2), TrackEffect::Panbrello(o1, o2)) => {
+                Some(TrackEffect::Panbrello(h1 + o1, h2 + o2))
+            }
+            (TrackEffect::PanbrelloWaveform(_h1, _h2), TrackEffect::PanbrelloWaveform(o1, o2)) => {
+                Some(TrackEffect::PanbrelloWaveform(o1.clone(), *o2)) // overwrite values
+            }
+            (TrackEffect::Portamento(h1), TrackEffect::Portamento(o1)) => {
+                Some(TrackEffect::Portamento(h1 + o1))
+            }
+            (TrackEffect::TonePortamento(h1), TrackEffect::TonePortamento(o1)) => {
+                Some(TrackEffect::TonePortamento(h1 + o1))
+            }
+            (TrackEffect::Tremolo(h1, h2), TrackEffect::Tremolo(o1, o2)) => {
+                Some(TrackEffect::Tremolo(h1 + o1, h2 + o2))
+            }
+            (TrackEffect::TremoloWaveform(_h1, _h2), TrackEffect::TremoloWaveform(o1, o2)) => {
+                Some(TrackEffect::TremoloWaveform(o1.clone(), *o2)) // overwrite values
+            }
+            (TrackEffect::Tremor(h1, h2), TrackEffect::Tremor(o1, o2)) => {
+                Some(TrackEffect::Tremor(h1 + o1, h2 + o2))
+            }
+            (TrackEffect::Vibrato(h1, h2), TrackEffect::Vibrato(o1, o2)) => {
+                Some(TrackEffect::Vibrato(h1 + o1, h2 + o2))
+            }
+            (TrackEffect::VibratoSpeed(h1), TrackEffect::VibratoSpeed(o1)) => {
+                Some(TrackEffect::VibratoSpeed(h1 + o1))
+            }
+            (TrackEffect::VibratoDepth(h1), TrackEffect::VibratoDepth(o1)) => {
+                Some(TrackEffect::VibratoDepth(h1 + o1))
+            }
+            (TrackEffect::VibratoWaveform(_h1, _h2), TrackEffect::VibratoWaveform(o1, o2)) => {
+                Some(TrackEffect::VibratoWaveform(o1.clone(), *o2)) // overwrite values
+            }
+            (TrackEffect::Volume(value1, tick1), TrackEffect::Volume(value2, tick2)) => Some(
+                TrackEffect::Volume((value1 + value2).clamp(0.0, 1.0), tick1 + tick2),
+            ),
+            (
+                TrackEffect::VolumeSlide(speed1, _tick_based1),
+                TrackEffect::VolumeSlide(speed2, tick_based2),
+            ) => {
+                Some(TrackEffect::VolumeSlide(speed1 + speed2, *tick_based2)) // overwrite tick_based
+            }
+            _ => None,
+        }
+    }
 }

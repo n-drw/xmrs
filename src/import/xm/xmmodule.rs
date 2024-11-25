@@ -9,8 +9,8 @@ use super::xmheader::{XmFlagType, XmHeader};
 use super::xminstrument::XmInstrument;
 use super::xmpattern::XmPattern;
 
-use crate::import::xm_effect::XmEffect;
-use crate::module::Module;
+use crate::import::import_memory::{ImportMemory, MemoryType};
+use crate::module::{Module, Row};
 use crate::period_helper::FrequencyType;
 
 #[derive(Default, Serialize, Deserialize, Debug)]
@@ -76,56 +76,22 @@ impl XmModule {
             default_bpm: self.header.default_bpm,
             pattern_order: self.pattern_order.iter().map(|&x| x as usize).collect(),
             pattern: vec![],
-            pattern2: vec![],
             instrument: vec![],
         };
 
-        for p in &self.pattern {
-            module.pattern.push(p.pattern.clone());
-        }
-        module.pattern2 = XmEffect::unpack_patterns(FrequencyType::AmigaFrequencies, &module.pattern);
+        let patterns: Vec<Vec<Row>> = self.pattern.iter().map(|p| p.pattern.clone()).collect();
+        let mut im = ImportMemory::default();
+        module.pattern = im.unpack_patterns(
+            FrequencyType::AmigaFrequencies,
+            MemoryType::Xm,
+            &module.pattern_order,
+            &patterns,
+        );
 
         for i in &self.instrument {
             module.instrument.push(i.to_instrument())
         }
 
         module
-    }
-
-    pub fn from_module(module: &Module) -> Self {
-        // Create XmModule from Module
-        let mut xmm = XmModule::default();
-        let (header, pattern_order) = XmHeader::from_module(module);
-        xmm.header = header;
-        xmm.pattern_order = pattern_order;
-        xmm.pattern = XmPattern::from_module(module);
-        xmm.instrument = XmInstrument::from_module(module);
-        xmm
-    }
-
-    pub fn save(&mut self) -> Result<Vec<u8>, EncodeError> {
-        let po_len = self.pattern_order.len();
-        self.header.header_size = 20 + po_len as u32;
-        let mut header_ser =
-            bincode::serde::encode_to_vec(&self.header, bincode::config::legacy()).unwrap();
-        let mut pattern_order_ser = self.pattern_order.clone();
-        let mut pattern_ser: Vec<u8> = vec![];
-        for xmp in &mut self.pattern {
-            let mut b = xmp.save()?;
-            pattern_ser.append(&mut b);
-        }
-
-        let mut instr_ser: Vec<u8> = vec![];
-        for xmi in &mut self.instrument {
-            let mut b = xmi.save()?;
-            instr_ser.append(&mut b);
-        }
-
-        let mut all: Vec<u8> = vec![];
-        all.append(&mut header_ser);
-        all.append(&mut pattern_order_ser);
-        all.append(&mut pattern_ser);
-        all.append(&mut instr_ser);
-        Ok(all)
     }
 }

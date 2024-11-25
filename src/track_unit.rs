@@ -1,10 +1,7 @@
 use crate::{
-    effect::{ControlChangeEffect, TrackEffect},
+    effect::{GlobalEffect, TrackEffect},
     pitch::Pitch,
-    prelude::Instrument,
 };
-use alloc::format;
-use alloc::string::ToString;
 use core::fmt::*;
 use serde::{Deserialize, Serialize};
 
@@ -17,7 +14,7 @@ pub struct TrackUnit {
     pub velocity: f32,
     pub instrument: Option<usize>,
     pub effects: Vec<TrackEffect>,
-    pub cc_effects: Vec<ControlChangeEffect>,
+    pub global_effects: Vec<GlobalEffect>,
 }
 
 impl Default for TrackUnit {
@@ -27,7 +24,7 @@ impl Default for TrackUnit {
             velocity: 1.0,
             instrument: None,
             effects: vec![],
-            cc_effects: vec![],
+            global_effects: vec![],
         }
     }
 }

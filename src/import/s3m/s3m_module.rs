@@ -3,8 +3,9 @@ use bincode;
 use bincode::error::DecodeError;
 use serde::Deserialize;
 
+use crate::import::import_memory::ImportMemory;
+use crate::import::import_memory::MemoryType;
 use crate::import::patternslot::PatternSlot;
-use crate::import::xm_effect::XmEffect;
 use crate::prelude::*;
 
 use alloc::string::String;
@@ -523,8 +524,14 @@ impl S3mModule {
         module.default_tempo = self.header.speed as u16;
         module.default_bpm = self.header.tempo as u16;
         module.pattern_order = self.positions.iter().map(|&x| x as usize).collect();
-        module.pattern = self.patterns.clone();
-        module.pattern2 = XmEffect::unpack_patterns(FrequencyType::AmigaFrequencies, &self.patterns);
+
+        let mut im = ImportMemory::default();
+        module.pattern = im.unpack_patterns(
+            FrequencyType::AmigaFrequencies,
+            MemoryType::S3m,
+            &module.pattern_order,
+            &self.patterns,
+        );
 
         for s3m_meta_instr in &self.instruments {
             match &s3m_meta_instr.value {

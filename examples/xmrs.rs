@@ -1,29 +1,35 @@
-#![forbid(unsafe_code)]
+use clap::Parser;
+use xmrs::prelude::*;
 
-use bincode::error::{DecodeError, EncodeError};
-use std::fs::File;
-use std::io::prelude::*;
-use xmrs::module::Module;
-use xmrs::xm::xmmodule::XmModule;
+#[derive(Parser)]
+struct Cli {
+    #[arg(short = 'f', long, required = true, value_name = "filename")]
+    filename: Option<String>,
 
-const XM: &[u8] = include_bytes!("note.xm");
+    /// Turn pattern informations on
+    #[arg(short = 'p', long, default_value = "false")]
+    patterns: bool,
+}
 
-fn main() -> Result<(), DecodeError> {
-    let xmmodule: XmModule = XmModule::load(XM)?;
-    println!("Load XM: {:#x?}", xmmodule);
-    let module: Module = xmmodule.to_module();
-    println!("Convert to module: {:#x?}", module);
+fn main() -> Result<(), std::io::Error> {
+    let cli = Cli::parse();
 
-    let mut xmmodule2: XmModule = XmModule::from_module(&module);
-    println!("Convert back to XM: {:#x?}", xmmodule2);
-
-    let xmodule2_se = xmmodule2.save().unwrap();
-    let mut file = File::create("output_debug.xm").unwrap();
-    file.write_all(&xmodule2_se).unwrap();
-    println!("Save XM file to `output_debug.xm`");
-
-    let xmmodule3: XmModule = XmModule::load(&xmodule2_se)?;
-    println!("Load Again: {:#x?}", xmmodule3);
-
+    match cli.filename {
+        Some(filename) => {
+            println!("--===~ XmRs Module Info Example ~===--");
+            println!("(c) 2024 Sébastien Béchet\n");
+            println!("opening {}", filename);
+            let contents = std::fs::read(filename.trim())?;
+            match Module::load(&contents) {
+                Ok(module) => {
+                    println!("{:?}", module);
+                }
+                Err(e) => {
+                    println!("{:?}", e);
+                }
+            }
+        }
+        _ => {}
+    }
     Ok(())
 }

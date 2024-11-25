@@ -8,7 +8,7 @@
 /// ```
 ///
 pub use crate::{
-    effect::{ControlChangeEffect, TrackEffect},
+    effect::{GlobalEffect, TrackEffect},
     envelope::{Envelope, EnvelopePoint},
     instr_default::InstrDefault,
     instr_ekn::InstrEkn,

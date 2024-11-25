@@ -2,7 +2,8 @@ use super::amiga_sample::AmigaSample;
 use super::patternslot::PatternSlot;
 use bincode::error::DecodeError;
 
-use crate::import::xm_effect::XmEffect;
+use crate::import::import_memory::ImportMemory;
+use crate::import::import_memory::MemoryType;
 use crate::prelude::*;
 
 use alloc::string::String;
@@ -60,10 +61,10 @@ impl AmigaModule {
             ..Default::default()
         };
 
-        // title
         amiga.title = String::from_utf8_lossy(&ser_amiga_module[0..22]).to_string();
-        amiga.title.trim_matches(char::from(0)).trim().to_string(); // cleanup
-                                                                    // get tag if any?
+        amiga.title.trim_matches(char::from(0)).trim().to_string();
+
+        // get tag if any?
         amiga.tag = String::from_utf8_lossy(&ser_amiga_module[0x438..0x438 + 4]).to_string();
 
         let mut data = &ser_amiga_module[0x14..];
@@ -170,8 +171,13 @@ impl AmigaModule {
             .iter()
             .map(|&x| x as usize)
             .collect();
-        module.pattern = self.patterns.clone();
-        module.pattern2 = XmEffect::unpack_patterns(FrequencyType::AmigaFrequencies, &self.patterns);
+        let mut im = ImportMemory::default();
+        module.pattern = im.unpack_patterns(
+            FrequencyType::AmigaFrequencies,
+            MemoryType::Mod,
+            &module.pattern_order,
+            &self.patterns,
+        );
 
         for i in 0..self.samples.len() {
             let instr = self.to_instr(i);

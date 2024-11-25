@@ -117,36 +117,4 @@ impl XmPattern {
 
         Ok((d2, lines))
     }
-
-    /// All patterns
-    pub fn from_module(module: &Module) -> Vec<Self> {
-        let mut all: Vec<Self> = vec![];
-        for p in &module.pattern {
-            let mut xmp = XmPattern {
-                pattern: p.clone(),
-                ..Default::default()
-            };
-            xmp.header.num_rows = p.len() as u16;
-            // uncompressed patternslot
-            xmp.header.pattern_data_size = (p.len() * p[0].len() * 5) as u16;
-            all.push(xmp);
-        }
-        all
-    }
-
-    pub fn save(&mut self) -> Result<Vec<u8>, EncodeError> {
-        let mut p_output: Vec<u8> = vec![];
-
-        for p in &self.pattern {
-            for ps in p {
-                let mut b = ps.save_xm();
-                p_output.append(&mut b);
-            }
-        }
-        self.header.pattern_data_size = p_output.len() as u16;
-
-        let mut output = bincode::serde::encode_to_vec(&self.header, bincode::config::legacy())?;
-        output.append(&mut p_output);
-        Ok(output)
-    }
 }

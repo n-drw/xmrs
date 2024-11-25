@@ -36,8 +36,7 @@ pub struct Module {
     pub default_bpm: u16,
     /// Defines the exact order for the patterns playback
     pub pattern_order: Vec<usize>,
-    pub pattern: Vec<Pattern>,
-    pub pattern2: Vec<Vec<Vec<TrackUnit>>>,
+    pub pattern: Vec<Vec<Vec<TrackUnit>>>,
 
     /// Instrument 1 has index 0, instrument 2 has index 1, etc.
     pub instrument: Vec<Instrument>,
@@ -54,7 +53,6 @@ impl Default for Module {
             default_bpm: 125,
             pattern_order: vec![],
             pattern: vec![],
-            pattern2: vec![],
             instrument: vec![],
         }
     }

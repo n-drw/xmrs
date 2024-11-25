@@ -277,4 +277,8 @@ impl ItModule {
 
         return Ok(it);
     }
+
+    pub fn to_module(&self) -> Module {
+        todo!();
+    }
 }
