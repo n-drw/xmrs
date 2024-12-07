@@ -10,9 +10,6 @@ use alloc::vec::Vec;
 use super::serde_helper::{deserialize_string_17, serialize_string_17};
 use super::serde_helper::{deserialize_string_20, serialize_string_20};
 
-use crate::module::Module;
-use crate::period_helper::FrequencyType;
-
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, IntoPrimitive, TryFromPrimitive)]
 #[serde(into = "u16", try_from = "u16")]
 #[repr(u16)]

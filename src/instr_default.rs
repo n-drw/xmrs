@@ -171,9 +171,10 @@ impl Default for InstrDefault {
     }
 }
 
-
 impl InstrDefault {
     pub fn change_all_sample_for_pitch(&mut self, sample_index: usize) {
-        self.sample_for_pitch.iter_mut().for_each(|elem| *elem = Some(sample_index));
+        self.sample_for_pitch
+            .iter_mut()
+            .for_each(|elem| *elem = Some(sample_index));
     }
 }

@@ -1,7 +1,4 @@
-use crate::{
-    pitch::Pitch,
-    prelude::{FrequencyType, TrackUnit},
-};
+use crate::pitch::Pitch;
 use alloc::format;
 use alloc::string::ToString;
 use core::fmt::*;

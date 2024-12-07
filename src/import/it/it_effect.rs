@@ -162,7 +162,7 @@ impl ItEffect {
                             4.0 * low as f32,
                         )])
                     }
-                    (high, low) => {
+                    (_high, _low) => {
                         return Some(vec![TrackImportEffect::PortamentoDown(4.0 * fx as f32)])
                     }
                 }
@@ -186,7 +186,7 @@ impl ItEffect {
                     (0xF, low) => {
                         return Some(vec![TrackImportEffect::PortamentoFineUp(-4.0 * low as f32)])
                     }
-                    (high, low) => {
+                    (_high, _low) => {
                         return Some(vec![TrackImportEffect::PortamentoUp(-4.0 * fx as f32)])
                     }
                 }

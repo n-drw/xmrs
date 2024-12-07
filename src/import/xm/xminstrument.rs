@@ -9,13 +9,10 @@ use alloc::{vec, vec::Vec};
 
 use crate::envelope::{Envelope, EnvelopePoint};
 use crate::instr_default::InstrDefault;
-use crate::instr_vibrato::InstrVibrato;
 use crate::instrument::{Instrument, InstrumentType};
 use crate::module::Module;
 use crate::sample::Sample;
 use crate::waveform::Waveform;
-
-use crate::instr_midi::InstrMidi;
 
 use super::serde_helper::{deserialize_string_22, serialize_string_22};
 use super::xmsample::{XmSample, XMSAMPLE_HEADER_SIZE};

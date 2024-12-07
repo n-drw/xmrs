@@ -40,8 +40,8 @@ So the last call to the pattern will be the winner.
 
 */
 
-use alloc::vec::Vec;
 use alloc::vec;
+use alloc::vec::Vec;
 
 #[cfg(feature = "import_it")]
 use crate::import::it::it_effect::ItEffect;
@@ -89,11 +89,10 @@ const TEMPO_DOWN: usize = 23;
 const SAMPLE_OFFSET_ADD_HIGH: usize = 24;
 const ARRAY_SIZE: usize = 25;
 
-
 /// For compatibility between formats and to compensate for special case difficulties with memory management, a best effort analysis is performed during import to associate the exact value with each effect.
 // Horrible hack to store values...use from left to right. First usable type wins.
 pub struct ImportMemory {
-    global: [(f32, f32, usize, usize); 64],        // s3m way
+    global: [(f32, f32, usize, usize); 64], // s3m way
     channel: [[(f32, f32, usize, usize); ARRAY_SIZE]; 64], // mod, xm, it way
 }
 
@@ -618,10 +617,14 @@ impl ImportMemory {
                 MemoryType::Mod | MemoryType::Xm => {
                     ModXmEffect::mod_xm_unpack_pattern(freq_type, &pattern)
                 }
-                MemoryType::S3m => todo!(),
+                #[cfg(feature = "import_s3m")]
+                MemoryType::S3m => {
+                    // TODO: rewrite `s3m_effect.rs` to gain overall consistency in the code
+                    ModXmEffect::mod_xm_unpack_pattern(freq_type, &pattern)
+                }
                 #[cfg(feature = "import_it")]
                 MemoryType::It => ItEffect::it_unpack_pattern(freq_type, &pattern),
-                _ => todo!(),
+                // _ => todo!(),
             })
             .collect();
 
@@ -629,7 +632,6 @@ impl ImportMemory {
         // to have different pre-memory configurations.
         // We "play" the music in order and it will remain a best effort.
         order.iter().flat_map(|inner| inner.iter()).for_each(|o| {
-            
             let pattern = if *o < source.len() {
                 &mut source[*o]
             } else {
@@ -672,7 +674,7 @@ impl ImportMemory {
                 &source[*ol]
             } else {
                 &mut vec![]
-            };            
+            };
 
             let pattern_d = if *ol < dest.len() {
                 &mut dest[*ol]

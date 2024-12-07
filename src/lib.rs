@@ -1,4 +1,5 @@
 #![forbid(unsafe_code)]
+#![allow(dead_code)]
 
 //!
 //! XMrs is a Safe SoundTracker Library
@@ -60,8 +61,7 @@ pub mod track_unit;
 /// All Waveform type
 pub mod waveform;
 // A simple way for random values
-pub mod  xorshift;
-
+pub mod xorshift;
 
 /// The Xmrs Prelude
 pub mod prelude;

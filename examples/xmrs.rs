@@ -16,17 +16,17 @@ fn main() -> Result<(), std::io::Error> {
 
     match cli.filename {
         Some(filename) => {
-            if ! cli.debug {
+            if !cli.debug {
                 println!("--===~ XmRs Module Info Example ~===--");
                 println!("(c) 2024 Sébastien Béchet\n");
                 println!("opening {}", filename);
             } else {
-                print!("{}: ",filename.trim());
+                print!("{}: ", filename.trim());
             }
             let contents = std::fs::read(filename.trim())?;
             match Module::load(&contents) {
                 Ok(module) => {
-                    if ! cli.debug {
+                    if !cli.debug {
                         println!("{:#?}", module);
                     } else {
                         println!("OK");

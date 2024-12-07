@@ -387,7 +387,8 @@ impl ItInstrument {
     }
 
     pub fn prepare_instrument(&self) -> Instrument {
-        let mut name = "".to_string();
+        #[allow(unused_assignments)]
+        let mut name = String::new();
         let mut muted = false;
         let mut instr = InstrDefault::default();
 

@@ -260,7 +260,7 @@ impl S3mEffect {
             }
         }
 
-        if let Some(instr) = n.instrument {
+        if let Some(_instr) = n.instrument {
             if n.effect_type != 0x3 {
                 self.s3m_last_g_instrument[ii] = n.instrument;
             }

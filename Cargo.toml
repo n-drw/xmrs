@@ -24,15 +24,28 @@ micromath = { version = "2.1.0", optional=true }
 [features]
 default = ["micromath", "import"]
 demo = ["clap", "import"]
+std = ["bincode/std", "num_enum/std", "serde/std"]
+
+# math features
+
 libm = ["num-traits/libm"]
 micromath = ["dep:micromath"]
+
+# import features
+
 import = ["import_amiga", "import_it", "import_s3m", "import_xm"]
 import_amiga = []
 import_it = []
 import_s3m = []
 import_sid = []
 import_xm = []
-std = ["bincode/std", "num_enum/std", "serde/std"]
+
+# xorshift features (rand32 is always enabled)
+
+rand8 = []
+rand16 = []
+rand64 = []
+
 
 [lib]
 name = "xmrs"

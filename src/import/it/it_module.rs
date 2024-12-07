@@ -363,19 +363,19 @@ impl ItModule {
                 module.instrument.push(instrument);
             }
         } else {
-                // Easy addition of samples with default Instrument
-                for (index, s) in samples.iter().enumerate() {
-                    let mut instrdef: InstrDefault = InstrDefault::default();
-                    instrdef.vibrato = vibratos[index];
-                    instrdef.sample.push(Some(s.clone()));
-                    instrdef.change_all_sample_for_pitch(0);
-                    let instrument = Instrument {
-                        name: s.name.clone(),
-                        muted: false,
-                        instr_type: InstrumentType::Default(instrdef)
-                    };
-                    module.instrument.push(instrument);
-                }
+            // Easy addition of samples with default Instrument
+            for (index, s) in samples.iter().enumerate() {
+                let mut instrdef: InstrDefault = InstrDefault::default();
+                instrdef.vibrato = vibratos[index];
+                instrdef.sample.push(Some(s.clone()));
+                instrdef.change_all_sample_for_pitch(0);
+                let instrument = Instrument {
+                    name: s.name.clone(),
+                    muted: false,
+                    instr_type: InstrumentType::Default(instrdef),
+                };
+                module.instrument.push(instrument);
+            }
         }
         module
     }

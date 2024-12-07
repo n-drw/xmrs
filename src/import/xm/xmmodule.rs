@@ -1,5 +1,5 @@
 /// Original XM Module
-use bincode::error::{DecodeError, EncodeError};
+use bincode::error::DecodeError;
 use serde::{Deserialize, Serialize};
 
 use alloc::format;

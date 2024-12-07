@@ -3,7 +3,6 @@ use bincode::error::DecodeError;
 use serde::Deserialize;
 
 use alloc::string::String;
-use alloc::vec;
 use core::fmt;
 
 use crate::prelude::*;
