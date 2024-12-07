@@ -90,7 +90,13 @@ impl ItPattern {
                 let mut slot = PatternSlot::default();
 
                 if mask_variable & 0x01 != 0 {
-                    let n = *data_iter.next().ok_or(DecodeError::LimitExceeded)?;
+                    let mut n = *data_iter.next().ok_or(DecodeError::LimitExceeded)?;
+                    if n > 120 && n != 254 && n != 255 {
+                        // FIXME: Sometime n==240 et n==246, i don't know why?
+                        if n == 240 || n == 246 {
+                            n = 253; // None
+                        }
+                    }
                     slot.note = n.try_into().map_err(|_| {
                         DecodeError::OtherString("Failed to convert note".to_string())
                     })?;

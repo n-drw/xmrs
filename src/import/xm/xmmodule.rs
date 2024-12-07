@@ -10,6 +10,7 @@ use super::xminstrument::XmInstrument;
 use super::xmpattern::XmPattern;
 
 use crate::import::import_memory::{ImportMemory, MemoryType};
+use crate::import::orders_helper;
 use crate::module::{Module, Row};
 use crate::period_helper::FrequencyType;
 
@@ -74,15 +75,17 @@ impl XmModule {
             restart_position: self.header.restart_position as usize,
             default_tempo: self.header.default_tempo,
             default_bpm: self.header.default_bpm,
-            pattern_order: self.pattern_order.iter().map(|&x| x as usize).collect(),
+            pattern_order: orders_helper::parse_orders(&self.pattern_order),
             pattern: vec![],
+            pattern_names: vec![],
+            channel_names: vec![],
             instrument: vec![],
         };
 
         let patterns: Vec<Vec<Row>> = self.pattern.iter().map(|p| p.pattern.clone()).collect();
         let mut im = ImportMemory::default();
         module.pattern = im.unpack_patterns(
-            FrequencyType::AmigaFrequencies,
+            module.frequency_type,
             MemoryType::Xm,
             &module.pattern_order,
             &patterns,

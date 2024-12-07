@@ -1,5 +1,5 @@
 /// Generic Effect enum Helper to parse and record memory data definitively to TrackEffect.
-use crate::{effect::TrackEffect, waveform::Waveform};
+use crate::{effect::TrackEffect, prelude::NewNoteAction, waveform::Waveform};
 use alloc::vec;
 use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
@@ -25,7 +25,8 @@ pub enum TrackImportEffect {
 
     /// `speed`, this effect slide the panning position
     /// P / XM0=0x19(P), XM=0x19(P), XM0=v0xD(L), XM0=v0xE(R)
-    ChannelPanningSlide(f32),
+    ChannelPanningSlide0(f32),
+    ChannelPanningSlideN(f32),
 
     /// `value`, set the Channel Volume
     /// Channel Volume
@@ -33,7 +34,8 @@ pub enum TrackImportEffect {
 
     /// `value`, slide the Channel Volume
     /// Channel Volume
-    ChannelVolumeSlide(f32),
+    ChannelVolumeSlide0(f32),
+    ChannelVolumeSlideN(f32),
 
     /// `bool`, round to the nearest halftone when using effects
     /// F / XM0=0xE3(E3)
@@ -44,31 +46,48 @@ pub enum TrackImportEffect {
     /// F / XM0=0xE5(E5)
     InstrumentFineTune(f32),
 
+    /// `nna` Change Instrument New Note Action
+    InstrumentNewNoteAction(NewNoteAction),
+
     /// `position`, change the panning envelope position
     /// P / XM0=0x15(L) (if instr.sustained)
     InstrumentPanningEnvelopePosition(usize),
+    InstrumentPanningEnvelope(bool),
+
+    InstrumentPitchEnvelope(bool),
 
     /// `offset`, this effect should be used together with a note
     /// The sample will be played from `offset` instead of zero
     /// XM0=9(9)
     InstrumentSampleOffset(usize),
+    InstrumentSampleOffsetAddHigh(usize),
+
+    /// `surround`
+    InstrumentSurround(bool),
 
     /// `position`, change the volume envelope position
     /// V / XM0=0x15(L)
     InstrumentVolumeEnvelopePosition(usize),
+    InstrumentVolumeEnvelope(bool),
 
-    /// `tick`, cut the note at the specified tick.
+    /// `(tick, past)`, cut the note at the specified tick.
+    /// if past is true, do it for past note too
     /// Note that it will only set the volume to zero, and the sample will still be played.
     /// V / XM=0xEC(EC)
-    NoteCut(usize),
+    NoteCut(usize, bool),
 
     /// `ticks`, this effect will delay the note the selected number of ticks
     /// XM0=0xED(ED), XM=0xED(ED)
     NoteDelay(usize),
 
-    /// `tick`, this effect will trigger a "Note Off" at the specified tick
+    /// `(tick, past)`, fadeout the note at the specified tick
+    /// if past is true, do it for past note too
+    NoteFadeOut(usize, bool),
+
+    /// `(tick, past)`, this effect will trigger a "Note Off" at the specified tick
+    /// if past is true, do it for past note too
     /// XM0=0x14(K), XM=0x14(K)
-    NoteOff(usize),
+    NoteOff(usize, bool),
 
     /// `interval`, this effect will retrigs the note with the specified interval
     /// V / XM0=0xE9(E9), XM=0xE9(E9)
@@ -230,25 +249,53 @@ impl TrackImportEffect {
         match self {
             TrackImportEffect::Arpeggio(h1, h2) => Some(TrackEffect::Arpeggio(*h1, *h2)),
             TrackImportEffect::ChannelPanning(pos) => Some(TrackEffect::ChannelPanning(*pos)),
-            TrackImportEffect::ChannelPanningSlide(speed) => Some(TrackEffect::ChannelPanningSlide(*speed)),
+            TrackImportEffect::ChannelPanningSlide0(speed) => {
+                Some(TrackEffect::ChannelPanningSlide(*speed, true))
+            }
+            TrackImportEffect::ChannelPanningSlideN(speed) => {
+                Some(TrackEffect::ChannelPanningSlide(*speed, false))
+            }
             TrackImportEffect::ChannelVolume(pos) => Some(TrackEffect::ChannelVolume(*pos)),
-            TrackImportEffect::ChannelVolumeSlide(pos) => Some(TrackEffect::ChannelVolumeSlide(*pos)),
+            TrackImportEffect::ChannelVolumeSlide0(pos) => {
+                Some(TrackEffect::ChannelVolumeSlide(*pos, true))
+            }
+            TrackImportEffect::ChannelVolumeSlideN(pos) => {
+                Some(TrackEffect::ChannelVolumeSlide(*pos, false))
+            }
             TrackImportEffect::Glissando(value) => Some(TrackEffect::Glissando(*value)),
             TrackImportEffect::InstrumentFineTune(tune) => {
                 Some(TrackEffect::InstrumentFineTune(*tune))
             }
+            TrackImportEffect::InstrumentNewNoteAction(nna) => {
+                Some(TrackEffect::InstrumentNewNoteAction(*nna))
+            }
             TrackImportEffect::InstrumentPanningEnvelopePosition(pos) => {
                 Some(TrackEffect::InstrumentPanningEnvelopePosition(*pos))
+            }
+            TrackImportEffect::InstrumentPanningEnvelope(set) => {
+                Some(TrackEffect::InstrumentPanningEnvelope(*set))
+            }
+            TrackImportEffect::InstrumentPitchEnvelope(set) => {
+                Some(TrackEffect::InstrumentPitchEnvelope(*set))
             }
             TrackImportEffect::InstrumentSampleOffset(offset) => {
                 Some(TrackEffect::InstrumentSampleOffset(*offset))
             }
+            TrackImportEffect::InstrumentSurround(set) => {
+                Some(TrackEffect::InstrumentSurround(*set))
+            }
             TrackImportEffect::InstrumentVolumeEnvelopePosition(pos) => {
                 Some(TrackEffect::InstrumentVolumeEnvelopePosition(*pos))
             }
-            TrackImportEffect::NoteCut(tick) => Some(TrackEffect::NoteCut(*tick)),
+            TrackImportEffect::InstrumentVolumeEnvelope(set) => {
+                Some(TrackEffect::InstrumentVolumeEnvelope(*set))
+            }
+            TrackImportEffect::NoteCut(tick, past) => Some(TrackEffect::NoteCut(*tick, *past)),
             TrackImportEffect::NoteDelay(ticks) => Some(TrackEffect::NoteDelay(*ticks)),
-            TrackImportEffect::NoteOff(tick) => Some(TrackEffect::NoteOff(*tick)),
+            TrackImportEffect::NoteFadeOut(tick, past) => {
+                Some(TrackEffect::NoteFadeOut(*tick, *past))
+            }
+            TrackImportEffect::NoteOff(tick, past) => Some(TrackEffect::NoteOff(*tick, *past)),
             TrackImportEffect::NoteRetrig(interval) => Some(TrackEffect::NoteRetrig(*interval)),
             TrackImportEffect::NoteRetrigExtended(interval, vol) => {
                 Some(TrackEffect::NoteRetrigExtended(*interval, *vol))

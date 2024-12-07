@@ -1,7 +1,10 @@
+use crate::import::import_memory::{ImportMemory, MemoryType};
+use crate::import::orders_helper;
 use crate::prelude::*;
 
 use bincode::error::DecodeError;
 
+use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec;
 use alloc::vec::Vec;
@@ -230,10 +233,14 @@ impl ItModule {
                 return Err(DecodeError::LimitExceeded);
             }
 
-            let data = &ser_it_module[*pattern_seek as usize..];
-            let itpattern = ItPattern::load(data)?;
-            let pattern = itpattern.unpack()?;
-            patterns.push(pattern);
+            if *pattern_seek != 0 {
+                let data = &ser_it_module[*pattern_seek as usize..];
+                let itpattern = ItPattern::load(data)?;
+                let pattern = itpattern.unpack()?;
+                patterns.push(pattern);
+            } else {
+                patterns.push(vec![vec![]]);
+            }
         }
 
         // === Samples ======================================================
@@ -279,6 +286,97 @@ impl ItModule {
     }
 
     pub fn to_module(&self) -> Module {
-        todo!();
+        let it_type = if self.header.is_ompt() { "MP" } else { "IT" };
+        let mut module = Module {
+            name: self.header.song_name.clone(),
+            comment: format!(
+                "{}: {}.{} (compatibility: {}.{})\n\n{}",
+                it_type,
+                self.header.created_with_tracker >> 8,
+                self.header.created_with_tracker & 0x00FF,
+                self.header.compatible_with_tracker >> 8,
+                self.header.compatible_with_tracker & 0x00FF,
+                self.message
+            ),
+            frequency_type: if self.header.is_linear_slides() {
+                FrequencyType::LinearFrequencies
+            } else {
+                FrequencyType::AmigaFrequencies
+            },
+            restart_position: 0,
+            default_tempo: self.header.initial_speed as u16,
+            default_bpm: self.header.initial_bpm as u16,
+            pattern_order: orders_helper::parse_orders(&self.orders),
+            pattern: vec![],
+            pattern_names: self.pattern_names.clone(),
+            channel_names: self.channel_names.clone(),
+            instrument: vec![],
+        };
+
+        let mut im = ImportMemory::default();
+        module.pattern = im.unpack_patterns(
+            module.frequency_type,
+            MemoryType::It,
+            &module.pattern_order,
+            &self.patterns,
+        );
+
+        // Prepare Samples
+        let mut samples: Vec<Sample> = vec![];
+        let mut vibratos: Vec<InstrVibrato> = vec![];
+        for (i, sh) in self.samples_header.iter().enumerate() {
+            let pdata = if sh.is_associated_sample() && self.samples.len() <= i {
+                &self.samples[i]
+            } else {
+                &None
+            };
+
+            let s = sh.to_sample(&pdata);
+            samples.push(s);
+
+            let vibrato = sh.to_vibrato();
+            vibratos.push(vibrato);
+        }
+
+        if self.header.is_instruments_used() {
+            // Prepare Instrument then add samples
+            for (index, i) in self.instruments.iter().enumerate() {
+                let mut instrument = i.prepare_instrument();
+                if let InstrumentType::Default(instrdef) = &mut instrument.instr_type {
+                    if vibratos.len() > index {
+                        instrdef.vibrato = vibratos[index];
+                    }
+                    for i2 in instrdef.sample_for_pitch {
+                        if let Some(i3) = i2 {
+                            // I must add i3 sample to instrdef
+                            if instrdef.sample.len() <= i3 {
+                                instrdef.sample.resize_with(i3 + 1, || None);
+                            }
+                            if let None = instrdef.sample[i3] {
+                                if samples.len() > i3 {
+                                    instrdef.sample[i3] = Some(samples[i3].clone());
+                                }
+                            }
+                        }
+                    }
+                }
+                module.instrument.push(instrument);
+            }
+        } else {
+                // Easy addition of samples with default Instrument
+                for (index, s) in samples.iter().enumerate() {
+                    let mut instrdef: InstrDefault = InstrDefault::default();
+                    instrdef.vibrato = vibratos[index];
+                    instrdef.sample.push(Some(s.clone()));
+                    instrdef.change_all_sample_for_pitch(0);
+                    let instrument = Instrument {
+                        name: s.name.clone(),
+                        muted: false,
+                        instr_type: InstrumentType::Default(instrdef)
+                    };
+                    module.instrument.push(instrument);
+                }
+        }
+        module
     }
 }

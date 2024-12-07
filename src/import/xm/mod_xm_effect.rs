@@ -1,6 +1,6 @@
-use super::patternslot::PatternSlot;
-use super::track_import_effect::TrackImportEffect;
-use super::track_import_unit::TrackImportUnit;
+use crate::import::patternslot::PatternSlot;
+use crate::import::track_import_effect::TrackImportEffect;
+use crate::import::track_import_unit::TrackImportUnit;
 use crate::prelude::*;
 use alloc::vec;
 use alloc::vec::Vec;
@@ -66,18 +66,23 @@ impl ModXmEffect {
                         TrackImportEffect::VolumeSlideN(vste),
                     ]);
                 } else {
-                    return Some(vec![TrackImportEffect::TonePortamento(0.0)]);
+                    return Some(vec![
+                        TrackImportEffect::TonePortamento(0.0),
+                        TrackImportEffect::VolumeSlideN(0.0),
+                    ]);
                 }
             }
             0x06 => {
-                let vs = Self::mod_xm_volume_slide(current.effect_parameter);
-                if let Some(vste) = vs {
+                if let Some(vste) = Self::mod_xm_volume_slide(current.effect_parameter) {
                     return Some(vec![
                         TrackImportEffect::Vibrato(0.0, 0.0),
                         TrackImportEffect::VolumeSlideN(vste),
                     ]);
                 } else {
-                    return Some(vec![TrackImportEffect::Vibrato(0.0, 0.0)]);
+                    return Some(vec![
+                        TrackImportEffect::Vibrato(0.0, 0.0),
+                        TrackImportEffect::VolumeSlideN(0.0),
+                    ]);
                 }
             }
             0x07 => {
@@ -159,7 +164,7 @@ impl ModXmEffect {
                             -(param as f32) / 64.0,
                         )])
                     }
-                    0xC => return Some(vec![TrackImportEffect::NoteCut(param as usize)]),
+                    0xC => return Some(vec![TrackImportEffect::NoteCut(param as usize, false)]),
                     0xD => return Some(vec![TrackImportEffect::NoteDelay(param as usize)]),
                     _ => return None,
                 }
@@ -168,6 +173,7 @@ impl ModXmEffect {
             0x14 => {
                 return Some(vec![TrackImportEffect::NoteOff(
                     current.effect_parameter as usize,
+                    false,
                 )])
             }
             // Lxx: Set envelope position
@@ -183,10 +189,12 @@ impl ModXmEffect {
                 let lower_nibble = param & 0x0F;
 
                 return match (upper_nibble, lower_nibble) {
-                    (f, 0) => Some(vec![TrackImportEffect::ChannelPanningSlide(
+                    (f, 0) => Some(vec![TrackImportEffect::ChannelPanningSlideN(
                         (f >> 4) as f32 / 16.0,
                     )]), // Slide up
-                    (0, f) => Some(vec![TrackImportEffect::ChannelPanningSlide(-(f as f32) / 16.0)]), // Slide down
+                    (0, f) => Some(vec![TrackImportEffect::ChannelPanningSlideN(
+                        -(f as f32) / 16.0,
+                    )]), // Slide down
                     _ => None,
                 };
             }
@@ -301,16 +309,20 @@ impl ModXmEffect {
                 }
             }
             // P - Set panning
-            0xC => return Some(TrackImportEffect::ChannelPanning((current.volume as f32) / 16.0)),
+            0xC => {
+                return Some(TrackImportEffect::ChannelPanning(
+                    (current.volume as f32) / 16.0,
+                ))
+            }
             // L - Panning slide left
             0xD => {
-                return Some(TrackImportEffect::ChannelPanningSlide(
+                return Some(TrackImportEffect::ChannelPanningSlideN(
                     -(current.volume as f32) / 16.0,
                 ))
             }
             // R - Panning slide right
             0xE => {
-                return Some(TrackImportEffect::ChannelPanningSlide(
+                return Some(TrackImportEffect::ChannelPanningSlideN(
                     (current.volume as f32) / 16.0,
                 ))
             }
@@ -329,7 +341,7 @@ impl ModXmEffect {
         }
     }
 
-    fn mod_xm_walk_control_change_effect(current: &PatternSlot) -> Option<GlobalEffect> {
+    fn mod_xm_walk_global_effect(current: &PatternSlot) -> Option<GlobalEffect> {
         match current.effect_type {
             // Bxx: Position jump
             0x0B => {
@@ -353,15 +365,15 @@ impl ModXmEffect {
                     // E6y: Pattern loop
                     0x6 => return Some(GlobalEffect::PatternLoop(param as usize)),
                     // EEy: Pattern delay
-                    0xE => Some(GlobalEffect::PatternDelay(param as usize)),
+                    0xE => Some(GlobalEffect::PatternDelay(param as usize, true)),
                     _ => None,
                 }
             }
-            // Fxx: Set tempo/BPM
+            // Fxx: Set speed/BPM
             0x0F => {
                 let param = current.effect_parameter;
                 if param < 32 {
-                    return Some(GlobalEffect::Tempo(param as usize));
+                    return Some(GlobalEffect::Speed(param as usize));
                 } else {
                     return Some(GlobalEffect::Bpm(param as usize));
                 }
@@ -379,8 +391,8 @@ impl ModXmEffect {
                 let lower_nibble = param & 0x0F;
 
                 return match (upper_nibble, lower_nibble) {
-                    (f, 0) => Some(GlobalEffect::VolumeSlide((f >> 4) as f32 / 64.0)), // Slide up
-                    (0, f) => Some(GlobalEffect::VolumeSlide(-(f as f32) / 64.0)),     // Slide down
+                    (0, f) => Some(GlobalEffect::VolumeSlide(-(f as f32) / 64.0, false)), // Slide down
+                    (f, 0) => Some(GlobalEffect::VolumeSlide((f >> 4) as f32 / 64.0, false)), // Slide up
                     _ => None,
                 };
             }
@@ -391,7 +403,7 @@ impl ModXmEffect {
     pub fn mod_xm_unpack(freq_type: FrequencyType, current: &PatternSlot) -> TrackImportUnit {
         let te = Self::mod_xm_walk_effect(freq_type, current);
         let ve = Self::mod_xm_walk_volume(freq_type, current);
-        let cc = Self::mod_xm_walk_control_change_effect(current);
+        let cc = Self::mod_xm_walk_global_effect(current);
 
         let mut tiu = TrackImportUnit::default();
         tiu.note = current.note;

@@ -1,8 +1,11 @@
 use alloc::string::String;
 use alloc::string::ToString;
+use alloc::vec::Vec;
 use bincode::error::DecodeError;
 use serde::Deserialize;
 use serde_big_array::BigArray;
+
+use crate::prelude::*;
 
 use super::serde_helper::deserialize_string_12;
 use super::serde_helper::deserialize_string_26;
@@ -18,7 +21,7 @@ pub struct ItInstrumentHeaderPre2 {
 
     /// DOS filename
     #[serde(deserialize_with = "deserialize_string_12")]
-    pub filename: String,
+    pub dos_filename: String,
 
     /// Reserved for future use.
     pub reserved1: u8,
@@ -30,10 +33,10 @@ pub struct ItInstrumentHeaderPre2 {
     pub flags: u8,
 
     /// Number of loop start node of volume envelope.
-    pub volume_loop_start: u8,
+    pub loop_start: u8,
 
     /// Number of loop end node of volume envelope.
-    pub volume_loop_end: u8,
+    pub loop_end: u8,
 
     /// Number of sustain loop start node of envelope.
     pub sustain_loop_start: u8,
@@ -100,6 +103,21 @@ pub struct ItEnvelopePre2 {
     pub node_points: [(u8, u8); 25],
 }
 
+impl ItEnvelopePre2 {
+    pub fn to_envelope(&self) -> Vec<EnvelopePoint> {
+        let mut points = Vec::new();
+
+        for (tick, magnitude) in self.node_points.iter() {
+            points.push(EnvelopePoint {
+                frame: *tick as usize,
+                value: (*magnitude as f32) / 64.0,
+            });
+        }
+        points.sort_by(|a, b| a.frame.cmp(&b.frame));
+        points
+    }
+}
+
 // --------------------------------------------------------------------------
 
 #[derive(Deserialize, Debug)]
@@ -121,7 +139,7 @@ pub struct ItInstrumentHeaderPost2 {
     /// 1: Continue the note
     /// 2: Stop the note
     /// 3: Fade out the note
-    pub new_note_action: u8,
+    pub nna: u8,
 
     /// Duplicate check type
     /// 0: Off
@@ -172,14 +190,14 @@ pub struct ItInstrumentHeaderPost2 {
 
     /// Initial filter cutoff frequency (0-127)
     /// The formula used is 110*2^(0.25+ce/fe), where ce is the cutoff frequency * (256 + 256) and fe is 24*512 or 20*512 if using OpenMPT's extended filter range.
-    pub initial_filter_cutoff: i8,
+    pub initial_filter_cutoff: u8,
 
     /// Initial filter resonance (0-127)
     /// The formula used is 10^((-resonance*24.0)/(128.0f*20.0f)), but it's generally better to use a precalculated table.
-    pub initial_filter_resonance: i8,
+    pub initial_filter_resonance: u8,
 
     /// MIDI channel (0-16)
-    pub midi_channel: i8,
+    pub midi_channel: u8,
 
     /// MIDI program (1-128)
     pub midi_program: u8,
@@ -232,6 +250,34 @@ pub struct ItEnvelopePost2 {
     /// - .1: Node position in ticks (0-9999)
     pub node_points: [(u8, u16); 25],
     // trailing_bytes: [u8; 7], // 7 bytes if version 2.0 to 2.14, 4 bytes if 2.14p1 or above
+}
+
+impl ItEnvelopePost2 {
+    pub fn to_envelope(&self) -> Vec<EnvelopePoint> {
+        let mut points = Vec::new();
+
+        for (tick, magnitude) in self.node_points.iter() {
+            points.push(EnvelopePoint {
+                frame: *tick as usize,
+                value: (*magnitude as f32) / 64.0,
+            });
+        }
+        points.sort_by(|a, b| a.frame.cmp(&b.frame));
+        points
+    }
+
+    pub fn to_envelope_struct(&self) -> Envelope {
+        Envelope {
+            enabled: self.flags & 0b0000_0001 != 0,
+            point: self.to_envelope(),
+            sustain_enabled: self.flags & 0b0000_0100 != 0,
+            sustain_start_point: self.sustain_loop_start as usize,
+            sustain_end_point: self.sustain_loop_end as usize,
+            loop_enabled: self.flags & 0b0000_0010 != 0,
+            loop_start_point: self.loop_start as usize,
+            loop_end_point: self.loop_end as usize,
+        }
+    }
 }
 
 // --------------------------------------------------------------------------
@@ -338,5 +384,122 @@ impl ItInstrument {
             pitch_envelope: pitch.0,
         };
         return Ok(ItInstrument::Post2(instr));
+    }
+
+    pub fn prepare_instrument(&self) -> Instrument {
+        let mut name = "".to_string();
+        let mut muted = false;
+        let mut instr = InstrDefault::default();
+
+        match self {
+            ItInstrument::Pre2(source) => {
+                name = if source.instr.instrument_name.len() != 0 {
+                    source.instr.instrument_name.clone()
+                } else {
+                    source.instr.dos_filename.clone()
+                };
+
+                for (note, sample) in source.instr.note_sample_keyboard_table.iter() {
+                    if *note < 120 && *sample != 0 {
+                        instr.sample_for_pitch[*note as usize] = Some(*sample as usize - 1);
+                    }
+                }
+
+                instr.volume_envelope = Envelope {
+                    enabled: source.instr.flags & 0b0000_0001 != 0,
+                    point: source.volume_envelope.to_envelope(),
+                    sustain_enabled: source.instr.flags & 0b0000_0100 != 0,
+                    sustain_start_point: source.instr.sustain_loop_start as usize,
+                    sustain_end_point: source.instr.sustain_loop_end as usize,
+                    loop_enabled: source.instr.flags & 0b0000_0010 != 0,
+                    loop_start_point: source.instr.loop_start as usize,
+                    loop_end_point: source.instr.loop_end as usize,
+                };
+
+                instr.volume_fadeout = (source.instr.fadeout as f32 / 64.0) / 512.0;
+
+                let nna = match source.instr.nna {
+                    1 => NewNoteAction::Continue,
+                    2 => NewNoteAction::NoteOff,
+                    3 => NewNoteAction::NoteFadeOut,
+                    _ => NewNoteAction::NoteCut,
+                };
+
+                instr.duplicate_check = DuplicateCheckType::Off(nna);
+                muted = source.instr.dnc == 0;
+            }
+            ItInstrument::Post2(source) => {
+                name = if source.instr.instrument_name.len() != 0 {
+                    source.instr.instrument_name.clone()
+                } else {
+                    source.instr.dos_filename.clone()
+                };
+
+                for (note, sample) in source.instr.note_sample_keyboard_table.iter() {
+                    if *note < 120 && *sample != 0 {
+                        instr.sample_for_pitch[*note as usize] = Some(*sample as usize - 1);
+                    }
+                }
+
+                instr.volume_envelope = source.volume_envelope.to_envelope_struct();
+                instr.pan_envelope = source.panning_envelope.to_envelope_struct();
+                instr.pitch_envelope = source.pitch_envelope.to_envelope_struct();
+                instr.pitch_envelope_as_low_pass_filter =
+                    source.pitch_envelope.flags & 0b1000_0000 != 0;
+
+                let nna = match source.instr.nna {
+                    1 => NewNoteAction::Continue,
+                    2 => NewNoteAction::NoteOff,
+                    3 => NewNoteAction::NoteFadeOut,
+                    _ => NewNoteAction::NoteCut,
+                };
+
+                let dca = match source.instr.duplicate_check_action {
+                    1 => DuplicateCheckAction::NoteOff(nna.clone()),
+                    2 => DuplicateCheckAction::NoteFadeOut(nna.clone()),
+                    _ => DuplicateCheckAction::NoteCut(nna.clone()),
+                };
+
+                instr.duplicate_check = match source.instr.duplicate_check_type {
+                    1 => DuplicateCheckType::Note(dca),
+                    2 => DuplicateCheckType::Sample(dca),
+                    3 => DuplicateCheckType::Instrument(dca),
+                    _ => DuplicateCheckType::Off(nna),
+                };
+
+                instr.volume_fadeout = (source.instr.fadeout as f32 / 64.0) / 512.0;
+                instr.pitch_pan_center = source
+                    .instr
+                    .pitch_pan_center
+                    .try_into()
+                    .unwrap_or(Pitch::C4);
+                instr.pitch_pan_separation = source.instr.pitch_pan_separation as f32 / 32.0;
+                instr.global_volume = source.instr.global_volume as f32 / 128.0;
+                instr.default_pan = if source.instr.default_pan & 0b1000_0000 == 0 {
+                    source.instr.default_pan as f32 / 64.0
+                } else {
+                    0.5
+                };
+                instr.random_volume_variation = source.instr.random_volume_variation as f32 / 100.0;
+                instr.random_pan_variation = source.instr.random_pan_variation as f32 / 100.0;
+
+                instr.initial_filter_cutoff = source.instr.initial_filter_cutoff;
+                instr.initial_filter_resonance = source.instr.initial_filter_resonance;
+
+                instr.midi = InstrMidi {
+                    on: false,
+                    channel: source.instr.midi_channel,
+                    program: source.instr.midi_program as u16,
+                    bank: source.instr.midi_bank,
+                    bend: 0,
+                };
+            }
+        }
+
+        return Instrument {
+            name,
+            instr_type: InstrumentType::Default(instr),
+            muted: muted,
+        };
     }
 }

@@ -3,8 +3,8 @@
 use bincode::error::EncodeError;
 use std::fs::File;
 use std::io::prelude::*;
-use xmrs::module::Module;
 use xmrs::import::sid::sid_module::SidModule;
+use xmrs::module::Module;
 
 fn main() -> Result<(), EncodeError> {
     println!("--===~ XmRs SID Module Info Example ~===--");
@@ -29,7 +29,6 @@ fn main() -> Result<(), EncodeError> {
     let sid = SidModule::get_sid_spellbound();
 
     // println!("{:?}", sid);
-
 
     Ok(())
 }

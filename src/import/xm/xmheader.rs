@@ -103,31 +103,4 @@ impl XmHeader {
             Err(DecodeError::Other("XmHeader.header_size too big?"))
         }
     }
-
-    /// Extract XmHeader and pattern_order from Module
-    pub fn from_module(module: &Module) -> (Self, Vec<u8>) {
-        let mut xmh = XmHeader {
-            name: module.name.clone(),
-            song_length: module.pattern_order.len() as u16,
-            restart_position: module.restart_position as u16,
-            number_of_channels: if !module.pattern.is_empty() {
-                module.pattern[0][0].len() as u16
-            } else {
-                8
-            },
-            number_of_patterns: module.pattern.len() as u16,
-            number_of_instruments: module.instrument.len() as u16,
-            flags: match module.frequency_type {
-                FrequencyType::LinearFrequencies => XmFlagType::XmLinearFrequencies,
-                FrequencyType::AmigaFrequencies => XmFlagType::XmAmigaFrequencies,
-            },
-            default_tempo: module.default_tempo,
-            default_bpm: module.default_bpm,
-            ..Default::default()
-        };
-        let pattern_order = module.pattern_order.iter().map(|&x| x as u8).collect();
-        xmh.header_size += 256;
-
-        (xmh, pattern_order)
-    }
 }

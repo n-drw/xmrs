@@ -11,6 +11,13 @@ use super::bitreader::BitReader;
 use super::serde_helper::deserialize_string_12;
 use super::serde_helper::deserialize_string_26;
 
+#[cfg(feature = "micromath")]
+#[allow(unused_imports)]
+use micromath::F32Ext;
+#[cfg(feature = "libm")]
+#[allow(unused_imports)]
+use num_traits::float::Float;
+
 /// Structure representing a sample header in the IMPS format.
 #[derive(Deserialize, Debug, Default)]
 #[repr(C)]
@@ -143,11 +150,11 @@ impl ItSampleHeader {
     }
 
     pub fn is_pingpong(&self) -> bool {
-        self.flags & 0b0100_0000 != 0
+        self.is_use_loop() && self.flags & 0b0100_0000 != 0
     }
 
     pub fn is_pingpong_sustain_loop(&self) -> bool {
-        self.flags & 0b1000_0000 != 0
+        self.is_use_sustain_loop() && self.flags & 0b1000_0000 != 0
     }
 
     pub fn is_samples_signed(&self) -> bool {
@@ -514,5 +521,88 @@ impl ItSampleHeader {
         }
 
         Ok(output)
+    }
+
+    fn c5_speed_to_finetune(&self) -> (i8, f32) {
+        let ratio = self.c5_speed as f32 / 16726.0;
+        let semitones = 12.0 * ratio.log2();
+        let relative_pitch = semitones.round() as i8;
+        let finetune = semitones.fract();
+        (relative_pitch, finetune)
+    }
+
+    pub fn to_sample(&self, data: &Option<SampleDataType>) -> Sample {
+        let name = if self.sample_name.len() != 0 {
+            self.sample_name.clone()
+        } else {
+            self.dos_filename.clone()
+        };
+
+        let loop_flag = if self.is_pingpong() {
+            LoopType::PingPong
+        } else if self.is_use_loop() {
+            LoopType::Forward
+        } else {
+            LoopType::No
+        };
+
+        let sustain_loop_flag = if self.is_pingpong_sustain_loop() {
+            LoopType::PingPong
+        } else if self.is_use_sustain_loop() {
+            LoopType::Forward
+        } else {
+            LoopType::No
+        };
+
+        let (relative_pitch, finetune) = self.c5_speed_to_finetune();
+
+        let panning = if self.default_pan & 0x80 != 0 {
+            self.default_pan as f32 / 64.0
+        } else {
+            0.5
+        };
+
+        let llength = if self.loop_end < self.loop_beginning {
+            0
+        } else {
+            self.loop_end - self.loop_beginning
+        };
+
+        let sllength = if self.sustain_loop_end < self.sustain_loop_beginning {
+            0
+        } else {
+            self.sustain_loop_end - self.sustain_loop_beginning
+        };
+
+        Sample {
+            name,
+            relative_pitch,
+            finetune,
+            volume: self.global_volume as f32 / 64.0,
+            panning,
+            loop_start: self.loop_beginning,
+            loop_length: llength,
+            loop_flag,
+            sustain_loop_flag,
+            sustain_loop_start: self.sustain_loop_beginning,
+            sustain_loop_length: sllength,
+            data: data.clone(),
+        }
+    }
+
+    pub fn to_vibrato(&self) -> InstrVibrato {
+        let wf = match self.vibrato_waveform {
+            1 => Waveform::TranslatedRampDown,
+            2 => Waveform::TranslatedSquare,
+            3 => Waveform::new_random(None),
+            _ => Waveform::TranslatedSine,
+        };
+
+        InstrVibrato {
+            waveform: wf,
+            speed: self.vibrato_speed as f32 / 64.0,
+            depth: self.vibrato_depth as f32 / 64.0,
+            sweep: self.vibrato_sweep as f32 / 64.0,
+        }
     }
 }

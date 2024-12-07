@@ -37,47 +37,61 @@ impl SampleDataType {
 }
 
 /// A Real Data sample
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Sample {
     /// Name
     pub name: String,
+    /// [-96..95] with 0 <=> C-4
+    pub relative_pitch: i8,
+    /// [-1..1]
+    pub finetune: f32,
+    /// [0..1] linear value
+    pub volume: f32,
+    /// [0..1] <=> [left..right]
+    pub panning: f32,
+
+    /// loop type
+    pub loop_flag: LoopType,
     /// 0 <= loop_start < len()
     pub loop_start: u32,
     /// 1 <= loop_length <= len() - loop_start
     pub loop_length: u32,
-    /// [0..1] linear value
-    pub volume: f32,
-    /// [-1..1]
-    pub finetune: f32,
-    /// loop type
-    pub flags: LoopType,
-    /// [0..1] <=> [left..right]
-    pub panning: f32,
-    /// [-96..95] with 0 <=> C-4
-    pub relative_pitch: i8,
+
+    /// sustain loop type
+    pub sustain_loop_flag: LoopType,
+    /// 0 <= sustain_loop_start < len()
+    pub sustain_loop_start: u32,
+    /// 1 <= sustain_loop_length <= len() - sustain_loop_start
+    pub sustain_loop_length: u32,
+
     /// wave data
-    pub data: SampleDataType,
+    pub data: Option<SampleDataType>,
 }
 
 impl Sample {
     /// return sample length
     pub fn len(&self) -> usize {
-        self.data.len()
+        if let Some(d) = &self.data {
+            d.len()
+        } else {
+            0
+        }
     }
 
     /// return sample at seek
     pub fn at(&self, seek: usize) -> (f32, f32) {
         match &self.data {
-            SampleDataType::Mono8(v) => (v[seek] as f32 / 128.0, v[seek] as f32 / 128.0),
-            SampleDataType::Mono16(v) => (v[seek] as f32 / 32768.0, v[seek] as f32 / 32768.0),
-            SampleDataType::Stereo8(v) => {
+            Some(SampleDataType::Mono8(v)) => (v[seek] as f32 / 128.0, v[seek] as f32 / 128.0),
+            Some(SampleDataType::Mono16(v)) => (v[seek] as f32 / 32768.0, v[seek] as f32 / 32768.0),
+            Some(SampleDataType::Stereo8(v)) => {
                 (v[seek * 2] as f32 / 128.0, v[seek * 2 + 1] as f32 / 128.0)
             }
-            SampleDataType::Stereo16(v) => (
+            Some(SampleDataType::Stereo16(v)) => (
                 v[seek * 2] as f32 / 32768.0,
                 v[seek * 2 + 1] as f32 / 32768.0,
             ),
-            SampleDataType::StereoFloat(v) => (v[seek * 2], v[seek * 2 + 1]),
+            Some(SampleDataType::StereoFloat(v)) => (v[seek * 2], v[seek * 2 + 1]),
+            None => (0.0, 0.0),
         }
     }
 
@@ -101,7 +115,7 @@ impl Sample {
         let loop_length = self.loop_length as usize;
         let loop_end = loop_start + loop_length;
 
-        match self.flags {
+        match self.loop_flag {
             LoopType::No => {
                 if pos < len {
                     return pos;
@@ -135,11 +149,12 @@ impl Sample {
     /// return sample size (8 or 16 bits)
     pub fn bits(&self) -> u8 {
         match &self.data {
-            SampleDataType::Mono8(_) => 8,
-            SampleDataType::Mono16(_) => 16,
-            SampleDataType::Stereo8(_) => 8,
-            SampleDataType::Stereo16(_) => 16,
-            SampleDataType::StereoFloat(_) => 32,
+            Some(SampleDataType::Mono8(_)) => 8,
+            Some(SampleDataType::Mono16(_)) => 16,
+            Some(SampleDataType::Stereo8(_)) => 8,
+            Some(SampleDataType::Stereo16(_)) => 16,
+            Some(SampleDataType::StereoFloat(_)) => 32,
+            None => 0,
         }
     }
 }

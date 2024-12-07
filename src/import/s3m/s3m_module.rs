@@ -5,6 +5,7 @@ use serde::Deserialize;
 
 use crate::import::import_memory::ImportMemory;
 use crate::import::import_memory::MemoryType;
+use crate::import::orders_helper;
 use crate::import::patternslot::PatternSlot;
 use crate::prelude::*;
 
@@ -523,7 +524,7 @@ impl S3mModule {
         module.frequency_type = FrequencyType::LinearFrequencies;
         module.default_tempo = self.header.speed as u16;
         module.default_bpm = self.header.tempo as u16;
-        module.pattern_order = self.positions.iter().map(|&x| x as usize).collect();
+        module.pattern_order = orders_helper::parse_orders(&self.positions);
 
         let mut im = ImportMemory::default();
         module.pattern = im.unpack_patterns(
@@ -537,35 +538,30 @@ impl S3mModule {
             match &s3m_meta_instr.value {
                 S3mInstrument::PcmInstrument(pcm) => {
                     // Prepare sample
-                    let data = if let Some(sdt) = &s3m_meta_instr.sample {
-                        sdt.clone()
-                    } else {
-                        if pcm.is_16bits() {
-                            SampleDataType::Mono16(vec![])
-                        } else {
-                            SampleDataType::Mono8(vec![])
-                        }
-                    };
+                    let data = s3m_meta_instr.sample.clone();
                     let rn = ph.c4freq_to_relative_pitch(pcm.c2spd as f32);
                     let sample = Sample {
                         name: s3m_meta_instr.filename.clone(),
-                        loop_start: pcm.loop_start,
-                        loop_length: pcm.loop_end - pcm.loop_start,
-                        volume: pcm.volume as f32 / 64.0,
+                        relative_pitch: rn.0,
                         finetune: rn.1,
-                        flags: if pcm.is_loop() {
+                        volume: pcm.volume as f32 / 64.0,
+                        panning: 0.5,
+                        loop_flag: if pcm.is_loop() {
                             LoopType::Forward
                         } else {
                             LoopType::No
                         },
-                        panning: 0.5,
-                        relative_pitch: rn.0,
+                        loop_start: pcm.loop_start,
+                        loop_length: pcm.loop_end - pcm.loop_start,
+                        sustain_loop_flag: LoopType::No,
+                        sustain_loop_start: 0,
+                        sustain_loop_length: 0,
                         data: data,
                     };
 
                     // Create InstrDefault
                     let mut instr_def = InstrDefault::default();
-                    instr_def.sample.push(sample);
+                    instr_def.sample.push(Some(sample));
 
                     // Create Instrument
                     let mut instr = Instrument::default();

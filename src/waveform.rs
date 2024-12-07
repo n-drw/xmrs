@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use xorshift::XorShift32;
 
 #[cfg(feature = "micromath")]
 #[allow(unused_imports)]
@@ -17,12 +18,22 @@ pub enum Waveform {
     Sine,
     RampDown,
     Square,
+    Random {
+        rng: XorShift32,
+    },
 }
 
 impl Waveform {
-    pub fn value(&self, step: f32) -> f32 {
+    pub fn new_random(seed: Option<u32>) -> Self {
+        let seed = if let Some(v) = seed { v } else { 4294967291 };
+        Waveform::Random {
+            rng: XorShift32::new(seed),
+        }
+    }
+
+    pub fn value(&mut self, step: f32) -> f32 {
         let step = step % 1.0;
-        return match &self {
+        return match self {
             Waveform::TranslatedSine => 0.5 + 0.5 * (core::f32::consts::TAU * (step + 0.25)).sin(),
             Waveform::TranslatedSquare => {
                 if step < 0.5 {
@@ -54,6 +65,7 @@ impl Waveform {
                     1.0
                 }
             }
+            Waveform::Random { rng } => rng.next_f32(),
         };
     }
 }

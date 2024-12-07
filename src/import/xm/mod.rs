@@ -5,6 +5,8 @@
 mod helper;
 mod serde_helper;
 
+pub mod mod_xm_effect;
+
 pub mod patternslot;
 pub mod xmheader;
 pub mod xminstrument;

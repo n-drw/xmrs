@@ -73,7 +73,7 @@ pub struct ItHeader {
     pub initial_speed: u8,
 
     /// Starting beats per minute of the song.
-    pub initial_tempo: u8,
+    pub initial_bpm: u8,
 
     /// Panning separation between channels (0-128).
     pub pan_separation: u8,

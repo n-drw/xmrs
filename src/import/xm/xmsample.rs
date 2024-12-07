@@ -137,19 +137,22 @@ impl XmSample {
 
         Sample {
             name: self.header.name.clone(),
-            loop_start: loop_start,
-            loop_length: loop_length,
-            volume: self.header.volume as f32 / 64.0,
+            relative_pitch: self.header.relative_pitch,
             finetune: (self.header.finetune as f32 / 127.0).clamp(-1.0, 1.0),
-            flags: match self.header.flags & 0b000000_11 {
+            volume: self.header.volume as f32 / 64.0,
+            panning: self.header.panning as f32 / 255.0,
+            loop_flag: match self.header.flags & 0b000000_11 {
                 1 => LoopType::Forward,
                 2 => LoopType::PingPong,
                 3 => LoopType::PingPong,
                 _ => LoopType::No,
             },
-            panning: self.header.panning as f32 / 255.0,
-            relative_pitch: self.header.relative_pitch,
-            data: data,
+            loop_start: loop_start,
+            loop_length: loop_length,
+            sustain_loop_flag: LoopType::No,
+            sustain_loop_start: 0,
+            sustain_loop_length: 0,
+            data: Some(data),
         }
     }
 
@@ -157,32 +160,35 @@ impl XmSample {
         let mut output: Vec<XmSample> = vec![];
         if let InstrumentType::Default(id) = &i.instr_type {
             for s in &id.sample {
-                let mut loop_start = s.loop_start;
-                let mut loop_length = s.loop_length;
+                if let Some(s) = s {
+                    let mut loop_start = s.loop_start;
+                    let mut loop_length = s.loop_length;
 
-                if let SampleDataType::Mono16(_) = &s.data {
-                    loop_start <<= 1;
-                    loop_length <<= 1;
+                    if let Some(SampleDataType::Mono16(_)) = &s.data {
+                        loop_start <<= 1;
+                        loop_length <<= 1;
+                    }
+
+                    let mut xms = XmSample::default();
+                    xms.header.length = match &s.data {
+                        Some(SampleDataType::Mono8(d)) => d.len() as u32,
+                        Some(SampleDataType::Mono16(d)) => 2 * d.len() as u32,
+                        Some(SampleDataType::Stereo8(d)) => 2 * d.len() as u32,
+                        Some(SampleDataType::Stereo16(d)) => 2 * 2 * d.len() as u32,
+                        Some(SampleDataType::StereoFloat(d)) => 4 * 2 * d.len() as u32,
+                        None => 0,
+                    };
+                    xms.header.loop_start = loop_start;
+                    xms.header.loop_length = loop_length;
+                    xms.header.volume = (s.volume * 64.0) as u8;
+                    xms.header.finetune = (s.finetune * 127.0) as i8;
+                    xms.header.flags = s.loop_flag.into();
+                    xms.header.panning = (s.panning * 255.0) as u8;
+                    xms.header.relative_pitch = s.relative_pitch;
+                    xms.header.name = s.name.clone();
+                    xms.data = s.data.clone();
+                    output.push(xms);
                 }
-
-                let mut xms = XmSample::default();
-                xms.header.length = match &s.data {
-                    SampleDataType::Mono8(d) => d.len() as u32,
-                    SampleDataType::Mono16(d) => 2 * d.len() as u32,
-                    SampleDataType::Stereo8(d) => 2 * d.len() as u32,
-                    SampleDataType::Stereo16(d) => 2 * 2 * d.len() as u32,
-                    SampleDataType::StereoFloat(d) => 4 * 2 * d.len() as u32,
-                };
-                xms.header.loop_start = loop_start;
-                xms.header.loop_length = loop_length;
-                xms.header.volume = (s.volume * 64.0) as u8;
-                xms.header.finetune = (s.finetune * 127.0) as i8;
-                xms.header.flags = s.flags.into();
-                xms.header.panning = (s.panning * 255.0) as u8;
-                xms.header.relative_pitch = s.relative_pitch;
-                xms.header.name = s.name.clone();
-                xms.data = Some(s.data.clone());
-                output.push(xms);
             }
         }
         output

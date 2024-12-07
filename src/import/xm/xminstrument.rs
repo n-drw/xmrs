@@ -126,12 +126,15 @@ impl XmInstrDefault {
         let mut xmid: Box<Self> = Box::default();
         match &i.instr_type {
             InstrumentType::Default(id) => {
-                xmid.sample_for_pitchs
-                    .copy_from_slice(&id.sample_for_pitch[..96]);
-
+                for i in 0..96 {
+                    xmid.sample_for_pitchs[i] = match id.sample_for_pitch[i] {
+                        Some(sample) => sample as u8,
+                        None => 0,
+                    };
+                }
                 xmid.volume_envelope = Self::from_envelope(&id.volume_envelope);
                 xmid.number_of_volume_points = id.volume_envelope.point.len() as u8;
-                xmid.volume_sustain_point = id.volume_envelope.sustain_point as u8;
+                xmid.volume_sustain_point = id.volume_envelope.sustain_start_point as u8;
                 xmid.volume_loop_start_point = id.volume_envelope.loop_start_point as u8;
                 xmid.volume_loop_end_point = id.volume_envelope.loop_end_point as u8;
                 if id.volume_envelope.enabled {
@@ -144,18 +147,18 @@ impl XmInstrDefault {
                     xmid.volume_flag |= 0b0100;
                 }
 
-                xmid.panning_envelope = Self::from_envelope(&id.panning_envelope);
-                xmid.number_of_panning_points = id.panning_envelope.point.len() as u8;
-                xmid.panning_sustain_point = id.panning_envelope.sustain_point as u8;
-                xmid.panning_loop_start_point = id.panning_envelope.loop_start_point as u8;
-                xmid.panning_loop_end_point = id.panning_envelope.loop_end_point as u8;
-                if id.panning_envelope.enabled {
+                xmid.panning_envelope = Self::from_envelope(&id.pan_envelope);
+                xmid.number_of_panning_points = id.pan_envelope.point.len() as u8;
+                xmid.panning_sustain_point = id.pan_envelope.sustain_start_point as u8;
+                xmid.panning_loop_start_point = id.pan_envelope.loop_start_point as u8;
+                xmid.panning_loop_end_point = id.pan_envelope.loop_end_point as u8;
+                if id.pan_envelope.enabled {
                     xmid.panning_flag |= 0b0001;
                 }
-                if id.panning_envelope.sustain_enabled {
+                if id.pan_envelope.sustain_enabled {
                     xmid.panning_flag |= 0b0010;
                 }
-                if id.panning_envelope.loop_enabled {
+                if id.pan_envelope.loop_enabled {
                     xmid.panning_flag |= 0b0100;
                 }
 
@@ -373,20 +376,21 @@ impl XmInstrument {
 
     fn is_envelope_nok(e: &Envelope) -> bool {
         e.point.len() > 12
-            || e.sustain_point >= e.point.len()
+            || e.sustain_start_point >= e.point.len()
             || e.loop_start_point >= e.point.len()
             || e.loop_end_point >= e.point.len()
             || e.loop_start_point > e.loop_end_point
+            || e.sustain_start_point > e.sustain_end_point
     }
 
     pub fn to_instrument(&self) -> Instrument {
         let it: InstrumentType = match &self.instr {
             XmInstrumentType::Empty => InstrumentType::Empty,
             XmInstrumentType::Default(xmi) => {
-                let mut sample: Vec<Sample> = vec![];
+                let mut sample: Vec<Option<Sample>> = vec![];
                 for xms in &self.sample {
                     let s = xms.to_sample();
-                    sample.push(s);
+                    sample.push(Some(s));
                 }
 
                 let num_vol_pt = if xmi.number_of_volume_points as usize <= 12 {
@@ -399,29 +403,27 @@ impl XmInstrument {
                 } else {
                     0
                 };
-                let mut sample_for_pitch: [u8; 120] = [0; 120];
-                sample_for_pitch[..96].copy_from_slice(&xmi.sample_for_pitchs);
-                let mut id = InstrDefault {
-                    sample_for_pitch,
-                    volume_envelope: Self::envelope_from_slice(&xmi.volume_envelope[0..num_vol_pt])
-                        .unwrap(),
-                    panning_envelope: Self::envelope_from_slice(
-                        &xmi.panning_envelope[0..num_pan_pt],
-                    )
-                    .unwrap(),
-                    vibrato: InstrVibrato::default(),
-                    volume_fadeout: xmi.volume_fadeout as f32 / 4095.0 / 4.0 / 2.0,
-                    midi: InstrMidi::default(),
-                    midi_mute_computer: false,
-                    sample,
-                };
+
+                let mut sample_for_pitch: [Option<usize>; 120] = [None; 120];
+                for (i, &val) in xmi.sample_for_pitchs.iter().enumerate() {
+                    sample_for_pitch[i] = Some(val as usize);
+                }
+                let mut id = InstrDefault::default();
+                id.volume_envelope =
+                    Self::envelope_from_slice(&xmi.volume_envelope[0..num_vol_pt]).unwrap();
+                id.sample_for_pitch = sample_for_pitch;
+                id.pan_envelope =
+                    Self::envelope_from_slice(&xmi.panning_envelope[0..num_pan_pt]).unwrap();
+                id.volume_fadeout = xmi.volume_fadeout as f32 / 4095.0 / 4.0 / 2.0;
+                id.sample = sample;
 
                 // copy volume envelope data
                 {
                     let ve = &mut id.volume_envelope;
                     ve.enabled = xmi.volume_flag & 0b0001 != 0;
                     ve.sustain_enabled = xmi.volume_flag & 0b0010 != 0;
-                    ve.sustain_point = xmi.volume_sustain_point as usize;
+                    ve.sustain_start_point = xmi.volume_sustain_point as usize;
+                    ve.sustain_end_point = xmi.volume_sustain_point as usize;
                     ve.loop_enabled = xmi.volume_flag & 0b0100 != 0;
                     ve.loop_start_point = xmi.volume_loop_start_point as usize;
                     ve.loop_end_point = xmi.volume_loop_end_point as usize;
@@ -429,10 +431,11 @@ impl XmInstrument {
 
                 // copy panning envelope data
                 {
-                    let pe = &mut id.panning_envelope;
+                    let pe = &mut id.pan_envelope;
                     pe.enabled = xmi.panning_flag & 0b0001 != 0;
                     pe.sustain_enabled = xmi.panning_flag & 0b0010 != 0;
-                    pe.sustain_point = xmi.panning_sustain_point as usize;
+                    pe.sustain_start_point = xmi.panning_sustain_point as usize;
+                    pe.sustain_end_point = xmi.panning_sustain_point as usize;
                     pe.loop_enabled = xmi.panning_flag & 0b0100 != 0;
                     pe.loop_start_point = xmi.panning_loop_start_point as usize;
                     pe.loop_end_point = xmi.panning_loop_end_point as usize;
@@ -442,15 +445,17 @@ impl XmInstrument {
                 if Self::is_envelope_nok(&id.volume_envelope) {
                     id.volume_envelope = Envelope::default();
                 }
-                if Self::is_envelope_nok(&id.panning_envelope) {
-                    id.panning_envelope = Envelope::default();
+                if Self::is_envelope_nok(&id.pan_envelope) {
+                    id.pan_envelope = Envelope::default();
                 }
 
                 // cleanup bad sample for notes
                 let sample_qty = id.sample.len();
                 for i in 0..id.sample_for_pitch.len() {
-                    if id.sample_for_pitch[i] as usize >= sample_qty {
-                        id.sample_for_pitch[i] = 0;
+                    if let Some(value) = id.sample_for_pitch[i] {
+                        if value >= sample_qty {
+                            id.sample_for_pitch[i] = None;
+                        }
                     }
                 }
 

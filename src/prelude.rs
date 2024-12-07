@@ -10,7 +10,7 @@
 pub use crate::{
     effect::{GlobalEffect, TrackEffect},
     envelope::{Envelope, EnvelopePoint},
-    instr_default::InstrDefault,
+    instr_default::{DuplicateCheckAction, DuplicateCheckType, InstrDefault, NewNoteAction},
     instr_ekn::InstrEkn,
     instr_midi::InstrMidi,
     instr_opl::{InstrOpl, MdiInstr, MdiOpl},

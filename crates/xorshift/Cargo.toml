@@ -1,0 +1,17 @@
+[package]
+name = "xorshift"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["Sebastien Bechet"]
+description = "A library to create pseudo-random values using xorshift paper"
+
+[dependencies]
+serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
+
+[features]
+default = ["rand32"]
+rand8 = []
+rand16 = []
+rand32 = []
+rand64 = []

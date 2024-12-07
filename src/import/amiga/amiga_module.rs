@@ -134,12 +134,12 @@ impl AmigaModule {
         let mut instr: Instrument = Instrument::default();
 
         let mut sample: Sample = self.samples[sample_index].to_sample();
-        sample.data = SampleDataType::Mono8(self.audio[sample_index].clone());
+        sample.data = Some(SampleDataType::Mono8(self.audio[sample_index].clone()));
 
         instr.name = sample.name.clone();
 
         let mut idef = InstrDefault::default();
-        idef.sample.push(sample);
+        idef.sample.push(Some(sample));
 
         instr.instr_type = InstrumentType::Default(idef);
 
@@ -166,11 +166,11 @@ impl AmigaModule {
         module.frequency_type = FrequencyType::AmigaFrequencies;
         module.default_tempo = 6;
         module.default_bpm = 125;
-        module.pattern_order = self.positions[..usize::from(self.song_length)]
+        module.pattern_order = vec![self.positions[..usize::from(self.song_length)]
             .to_vec()
             .iter()
             .map(|&x| x as usize)
-            .collect();
+            .collect()];
         let mut im = ImportMemory::default();
         module.pattern = im.unpack_patterns(
             FrequencyType::AmigaFrequencies,

@@ -7,8 +7,8 @@ struct Cli {
     filename: Option<String>,
 
     /// Turn pattern informations on
-    #[arg(short = 'p', long, default_value = "false")]
-    patterns: bool,
+    #[arg(short = 'd', long, default_value = "false")]
+    debug: bool,
 }
 
 fn main() -> Result<(), std::io::Error> {
@@ -16,16 +16,24 @@ fn main() -> Result<(), std::io::Error> {
 
     match cli.filename {
         Some(filename) => {
-            println!("--===~ XmRs Module Info Example ~===--");
-            println!("(c) 2024 Sébastien Béchet\n");
-            println!("opening {}", filename);
+            if ! cli.debug {
+                println!("--===~ XmRs Module Info Example ~===--");
+                println!("(c) 2024 Sébastien Béchet\n");
+                println!("opening {}", filename);
+            } else {
+                print!("{}: ",filename.trim());
+            }
             let contents = std::fs::read(filename.trim())?;
             match Module::load(&contents) {
                 Ok(module) => {
-                    println!("{:?}", module);
+                    if ! cli.debug {
+                        println!("{:#?}", module);
+                    } else {
+                        println!("OK");
+                    }
                 }
                 Err(e) => {
-                    println!("{:?}", e);
+                    println!("ERR: {:?} for {}", e, filename.trim());
                 }
             }
         }

@@ -30,8 +30,8 @@ So the last call to the pattern will be the winner.
 | **VibratoFine**              |         |        |         | TRUE   |
 | **VolumeSlide0**             |         | TRUE   | GLOBAL  | TRUE   | 0 EA EB v6 v7
 | **VolumeSlideN**             |         | TRUE   | GLOBAL  | TRUE   | N 5 6 A v8 v9
-| **FxVolume Tone Portamento** |         | TRUE   |         | TRUE   |
-| **FxVolume Vibrato Depth**   |         | TRUE   |         | TRUE   |
+| **FxVolume Tone Portamento** |         | TRUE   |         | FX MEM |
+| **FxVolume Vibrato Depth**   |         | TRUE   |         | FX MEM |
 |                              |         |        |         |        |
 | **Channel Volume Slide**     |         | TRUE   | TRUE    | TRUE   |
 | **global Volume Slide**      |         | TRUE   | TRUE    | TRUE   |
@@ -41,8 +41,13 @@ So the last call to the pattern will be the winner.
 */
 
 use alloc::vec::Vec;
+use alloc::vec;
 
-use super::mod_xm_effect::ModXmEffect;
+#[cfg(feature = "import_it")]
+use crate::import::it::it_effect::ItEffect;
+#[cfg(feature = "import_xm")]
+use crate::import::xm::mod_xm_effect::ModXmEffect;
+
 use super::patternslot::PatternSlot;
 use super::track_import_effect::TrackImportEffect;
 use super::track_import_unit::TrackImportUnit;
@@ -81,18 +86,22 @@ const CHANNEL_VOLUME_SLIDE: usize = 20;
 const GLOBAL_VOLUME_SLIDE: usize = 21;
 const TEMPO_UP: usize = 22;
 const TEMPO_DOWN: usize = 23;
+const SAMPLE_OFFSET_ADD_HIGH: usize = 24;
+const ARRAY_SIZE: usize = 25;
 
+
+/// For compatibility between formats and to compensate for special case difficulties with memory management, a best effort analysis is performed during import to associate the exact value with each effect.
 // Horrible hack to store values...use from left to right. First usable type wins.
 pub struct ImportMemory {
-    global: [(f32, f32, usize, usize); 64], // s3m way
-    channel: [[(f32, f32, usize, usize); 23]; 64], // mod, xm, it way
+    global: [(f32, f32, usize, usize); 64],        // s3m way
+    channel: [[(f32, f32, usize, usize); ARRAY_SIZE]; 64], // mod, xm, it way
 }
 
 impl Default for ImportMemory {
     fn default() -> Self {
         Self {
             global: [(0.0, 0.0, 0, 0); 64],
-            channel: [[(0.0, 0.0, 0, 0); 23]; 64],
+            channel: [[(0.0, 0.0, 0, 0); ARRAY_SIZE]; 64],
         }
     }
 }
@@ -156,7 +165,7 @@ impl ImportMemory {
                     }
                 }
 
-                TrackImportEffect::ChannelPanningSlide(a) => {
+                TrackImportEffect::ChannelPanningSlideN(a) => {
                     match mem {
                         MemoryType::Mod => {
                             // No memory use
@@ -408,9 +417,19 @@ impl ImportMemory {
                     MemoryType::Mod | MemoryType::Xm | MemoryType::It | MemoryType::S3m => {
                         if *a == 0 {
                             *a = self.channel[index][SAMPLE_OFFSET].2
+                                + self.channel[index][SAMPLE_OFFSET_ADD_HIGH].2;
                         } else {
                             self.channel[index][SAMPLE_OFFSET].2 = *a;
                         }
+                    }
+                },
+
+                TrackImportEffect::InstrumentSampleOffsetAddHigh(a) => match mem {
+                    MemoryType::Mod | MemoryType::Xm | MemoryType::S3m => {
+                        // No memory
+                    }
+                    MemoryType::It => {
+                        self.channel[index][SAMPLE_OFFSET_ADD_HIGH].2 = *a;
                     }
                 },
 
@@ -498,12 +517,15 @@ impl ImportMemory {
                         MemoryType::Mod | MemoryType::S3m => {
                             // No memory
                         }
-                        MemoryType::Xm | MemoryType::It => {
+                        MemoryType::Xm => {
                             if *a == 0.0 {
                                 *a = self.channel[index][FX_VOLUME_TONE_PORTAMENTO].0
                             } else {
                                 self.channel[index][FX_VOLUME_TONE_PORTAMENTO].0 = *a;
                             }
+                        }
+                        MemoryType::It => {
+                            // never called because no use
                         }
                     }
                 }
@@ -513,17 +535,21 @@ impl ImportMemory {
                         MemoryType::Mod | MemoryType::S3m => {
                             // No memory
                         }
-                        MemoryType::Xm | MemoryType::It => {
+                        MemoryType::Xm => {
                             if *a == 0.0 {
                                 *a = self.channel[index][FX_VOLUME_VIBRATO_DEPTH].0
                             } else {
                                 self.channel[index][FX_VOLUME_VIBRATO_DEPTH].0 = *a;
                             }
                         }
+                        MemoryType::It => {
+                            // never called because no use
+                        }
                     }
                 }
 
-                TrackImportEffect::ChannelVolumeSlide(a) => {
+                TrackImportEffect::ChannelVolumeSlide0(a)
+                | TrackImportEffect::ChannelVolumeSlideN(a) => {
                     match mem {
                         MemoryType::Mod => {
                             // No memory
@@ -541,30 +567,25 @@ impl ImportMemory {
                 _ => {}
             }
         });
-
 
         tiu.global_effects.iter_mut().for_each(|e| {
             match e {
-                GlobalEffect::TempoSlide(a) => {
-                    let fx_index = if *a < 0.0 {
-                        TEMPO_DOWN
-                    } else {
-                        TEMPO_UP
-                    };
+                GlobalEffect::BpmSlide(a) => {
+                    let fx_index = if *a < 0 { TEMPO_DOWN } else { TEMPO_UP };
                     match mem {
                         MemoryType::Mod => {
                             // No memory
                         }
                         MemoryType::Xm | MemoryType::It | MemoryType::S3m => {
-                            if *a == 0.0 {
-                                *a = self.channel[index][fx_index].0
+                            if *a == 0 {
+                                *a = self.channel[index][fx_index].2 as isize;
                             } else {
-                                self.channel[index][fx_index].0 = *a;
+                                self.channel[index][fx_index].2 = *a as usize;
                             }
                         }
                     }
                 }
-                GlobalEffect::VolumeSlide(a) => {
+                GlobalEffect::VolumeSlide(a, _b) => {
                     match mem {
                         MemoryType::Mod => {
                             // No memory
@@ -581,34 +602,39 @@ impl ImportMemory {
                 _ => {}
             }
         });
-
-
     }
 
     fn apply_memory(
         &mut self,
         freq_type: FrequencyType,
         mem: MemoryType,
-        order: &Vec<usize>,
+        order: &Vec<Vec<usize>>,
         patterns: &Vec<Vec<Vec<PatternSlot>>>,
     ) -> Vec<Vec<Vec<TrackImportUnit>>> {
         let mut source: Vec<Vec<Vec<TrackImportUnit>>> = patterns
             .iter()
             .map(|pattern: &Vec<Vec<PatternSlot>>| match mem {
+                #[cfg(any(feature = "import_amiga", feature = "import_xm"))]
                 MemoryType::Mod | MemoryType::Xm => {
                     ModXmEffect::mod_xm_unpack_pattern(freq_type, &pattern)
                 }
                 MemoryType::S3m => todo!(),
-                MemoryType::It => todo!(),
+                #[cfg(feature = "import_it")]
+                MemoryType::It => ItEffect::it_unpack_pattern(freq_type, &pattern),
+                _ => todo!(),
             })
             .collect();
 
         // It is impossible to guarantee that a pattern will not be designed
         // to have different pre-memory configurations.
         // We "play" the music in order and it will remain a best effort.
-
-        order.iter().for_each(|o| {
-            let pattern = &mut source[*o];
+        order.iter().flat_map(|inner| inner.iter()).for_each(|o| {
+            
+            let pattern = if *o < source.len() {
+                &mut source[*o]
+            } else {
+                &mut vec![]
+            };
             pattern.iter_mut().for_each(|row| {
                 row.iter_mut()
                     .enumerate()
@@ -623,7 +649,7 @@ impl ImportMemory {
         &mut self,
         freq_type: FrequencyType,
         mem: MemoryType,
-        order: &Vec<usize>,
+        order: &Vec<Vec<usize>>,
         patterns: &Vec<Vec<Vec<PatternSlot>>>,
     ) -> Vec<Vec<Vec<TrackUnit>>> {
         /* first step: get the same patterns but using TrackImportUnit */
@@ -641,15 +667,29 @@ impl ImportMemory {
             .collect();
 
         /* third step: add effects */
-        for ol in order.clone() {
-            let pattern_s = &source[ol];
-            let pattern_d = &mut dest[ol];
+        for ol in order.iter().flat_map(|inner| inner.iter()) {
+            let pattern_s = if *ol < source.len() {
+                &source[*ol]
+            } else {
+                &mut vec![]
+            };            
+
+            let pattern_d = if *ol < dest.len() {
+                &mut dest[*ol]
+            } else {
+                &mut vec![]
+            };
 
             for (index_row, row_s) in pattern_s.iter().enumerate() {
                 let row_d = &mut pattern_d[index_row];
 
                 for (index_ch, ch_s) in row_s.iter().enumerate() {
                     let ch_d = &mut row_d[index_ch];
+
+                    // no use of GlobalEffects::PositionJump and GlobalEffects::PatternBreak
+                    // due to implementation complexity and risk of infinite loop
+                    // maybe one day someone will have the motivation if a bug too important appears
+
                     ch_d.effects = TrackImportEffect::to_track_effects(&ch_s.effects);
                 }
             }

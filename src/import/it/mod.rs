@@ -2,6 +2,7 @@
 
 mod bitreader;
 mod it_edit_history;
+pub(crate) mod it_effect;
 mod it_header;
 mod it_instrument;
 mod it_midi_macros;

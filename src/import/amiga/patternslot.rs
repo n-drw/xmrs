@@ -108,7 +108,7 @@ impl PatternSlot {
         let effect = ((input >> 8) & 0x000F) as u8;
         let data = (input & 0x00FF) as u8;
 
-        // TODO: better error note handle any day
+        // TODO: one day do better error handling for notes here
         let nu8 = match Self::amiga_pitch(period) {
             Some(n) => n,
             None => {

@@ -4,32 +4,34 @@
 //! XMrs is a Safe SoundTracker Library
 //!
 //! ```
-//! module+--->instrument+--->instr_defaut+--->sample
-//!       |              |                +--->envelope
-//!       |              |                +--->vibrato
-//!       |              +--->instr_ekn
-//!       |              +--->instr_midi
-//!       |              +--->instr_opl
-//!       |              +--->instr_sid
-//!       |              +-+->instr_robrs
-//!       |                +--->instr_sid
-//!       +--->Pattern--->Row--->patternslot
+//! Module+--->Instrument+--->InstrDefault+--->Sample (Loop, Sustain Loop)
+//!       |              |                +--->Envelope (Pitch, Volume, Panning)
+//!       |              |                +--->Vibrato
+//!       |              |                +--->InstrMidi
+//!       |              +--->InstrEkn (Euclidian Rythm Instrument)
+//!       |              +--->InstrMidi
+//!       |              +--->InstrOpl (Yamaha OPL)
+//!       |              +--->InstrSid (MOS6581 SID Voices)
+//!       |              +-+->InstrRobSid+--->InstrSid
+//!       +--->Pattern--->Row--->TrackUnit+--->TrackEffect
+//!                                       +--->GlobalEffect
 //! ```
 //!
-//! You can load (and save) historical XM files using `xm` (see `README.md`)
+//! You can load historical IT, S3M, SID, MOD, XM files using `import` (see `README.md`)
 //!
-//! You can load (and save) your work using `load()` and `save()` serde fn
+//! You can serialize your work using serde
 //!
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
 extern crate alloc;
+extern crate xorshift;
 
 /// All effects
 pub mod effect;
 /// Envelope with Steroid
 pub mod envelope;
-/// Historical XM Instrument
+/// Instrument handling samples
 pub mod instr_default;
 /// Euclidian Rythm Instrument
 pub mod instr_ekn;
@@ -70,6 +72,8 @@ pub mod prelude;
 //     feature = "import_sid",
 //     feature = "import_xm",
 // ))]
+/// Import historical files.
+/// Do not use it directly: see Module load* fn impl
 pub mod import;
 
 #[cfg(test)]

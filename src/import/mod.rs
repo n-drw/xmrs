@@ -1,12 +1,13 @@
 #![forbid(unsafe_code)]
 
-pub(crate) mod patternslot;
 pub(crate) mod import_memory;
-pub(crate) mod mod_xm_effect;
+pub(crate) mod orders_helper;
+pub(crate) mod patternslot;
 pub(crate) mod track_import_effect;
 pub(crate) mod track_import_unit;
 
-pub mod import_loader;
+/// impl loader to Module. See Module documentation load* fn.
+mod import_loader;
 
 /// Load and Save Historical XM files
 #[cfg(feature = "import_xm")]

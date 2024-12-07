@@ -72,14 +72,17 @@ impl AmigaSample {
 
         Sample {
             name: self.name.clone(),
+            relative_pitch: 0,
+            finetune: f,
+            volume: self.volume as f32 / 64.0,
+            panning: 0.5,
+            loop_flag: flag,
             loop_start: ro as u32,
             loop_length: rl as u32,
-            volume: self.volume as f32 / 64.0,
-            finetune: f,
-            flags: flag,
-            panning: 0.5,
-            relative_pitch: 0,
-            data: crate::prelude::SampleDataType::Mono8(vec![]),
+            sustain_loop_flag: LoopType::No,
+            sustain_loop_start: 0,
+            sustain_loop_length: 0,
+            data: None,
         }
     }
 }

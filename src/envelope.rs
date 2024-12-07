@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 pub struct EnvelopePoint {
     /// Frame number of the point (X-coordinate)
     pub frame: usize,
-    /// Value of the point (Y-coordinate)
+    /// Value of the point (Y-coordinate) [0..1.0]
     pub value: f32,
 }
 
@@ -24,16 +24,18 @@ impl EnvelopePoint {
     }
 }
 
-/// Envelope with Steroid
+/// Envelope
 #[derive(Default, Serialize, Deserialize, Clone, Debug)]
 pub struct Envelope {
     pub enabled: bool,
-    /// 12 points maximum for XM compatibility
+
     pub point: Vec<EnvelopePoint>,
 
     pub sustain_enabled: bool,
     /// index in `point`
-    pub sustain_point: usize,
+    pub sustain_start_point: usize,
+    /// inde xin `point`
+    pub sustain_end_point: usize,
 
     pub loop_enabled: bool,
     /// index in `point`

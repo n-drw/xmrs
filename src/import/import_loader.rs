@@ -1,12 +1,8 @@
-use alloc::string::ToString;
+use crate::prelude::*;
 use bincode::error::DecodeError;
 
-use alloc::vec;
-use alloc::vec::Vec;
-
-use crate::prelude::*;
-
 impl Module {
+    /// Try to import Amiga Module file
     #[cfg(feature = "import_amiga")]
     pub fn load_mod(source: &[u8]) -> Result<Self, DecodeError> {
         use super::amiga::amiga_module::AmigaModule;
@@ -17,6 +13,7 @@ impl Module {
         }
     }
 
+    /// Try to import Fast Tracker II Module file
     #[cfg(feature = "import_xm")]
     pub fn load_xm(source: &[u8]) -> Result<Self, DecodeError> {
         use super::xm::xmmodule::XmModule;
@@ -27,6 +24,7 @@ impl Module {
         }
     }
 
+    /// Try to import Scream Tracker 3 Module file
     #[cfg(feature = "import_s3m")]
     pub fn load_s3m(source: &[u8]) -> Result<Self, DecodeError> {
         use super::s3m::s3m_module::S3mModule;
@@ -37,6 +35,7 @@ impl Module {
         }
     }
 
+    /// Try to import Impulse Tracker Module file
     #[cfg(feature = "import_it")]
     pub fn load_it(source: &[u8]) -> Result<Self, DecodeError> {
         use super::it::it_module::ItModule;
@@ -47,6 +46,7 @@ impl Module {
         }
     }
 
+    /// Try to import any historical Module file
     pub fn load(source: &[u8]) -> Result<Self, DecodeError> {
         #[cfg(feature = "import_xm")]
         if let Ok(m) = Self::load_xm(source) {
@@ -68,7 +68,6 @@ impl Module {
         if let Ok(m) = Self::load_mod(source) {
             return Ok(m);
         };
-
 
         return Err(DecodeError::Other("Unknown data?"));
     }
