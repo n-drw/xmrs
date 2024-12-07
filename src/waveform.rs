@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use xorshift::XorShift32;
+use super::xorshift::XorShift32;
 
 #[cfg(feature = "micromath")]
 #[allow(unused_imports)]

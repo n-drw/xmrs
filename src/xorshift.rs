@@ -1,6 +1,3 @@
-#![forbid(unsafe_code)]
-#![no_std]
-
 use serde::{Deserialize, Serialize};
 
 // === rand8 ================================================================
@@ -76,12 +73,10 @@ impl Iterator for XorShift16 {
 // === rand32 ===============================================================
 
 #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize, Eq, Hash, PartialEq)]
-#[cfg(any(feature = "rand32"))]
 pub struct XorShift32 {
     state: u32,
 }
 
-#[cfg(any(feature = "rand32"))]
 impl XorShift32 {
     pub fn new(seed: u32) -> Self {
         if seed == 0 {
@@ -96,7 +91,6 @@ impl XorShift32 {
     }
 }
 
-#[cfg(any(feature = "rand32"))]
 impl Iterator for XorShift32 {
     type Item = u32;
 

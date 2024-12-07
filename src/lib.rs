@@ -25,7 +25,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 extern crate alloc;
-extern crate xorshift;
 
 /// All effects
 pub mod effect;
@@ -60,6 +59,9 @@ pub mod sample;
 pub mod track_unit;
 /// All Waveform type
 pub mod waveform;
+// A simple way for random values
+pub mod  xorshift;
+
 
 /// The Xmrs Prelude
 pub mod prelude;
