@@ -8,7 +8,8 @@ use serde::{Deserialize, Serialize};
 /// - voice2: from voice1
 #[derive(Default, Serialize, Deserialize, Copy, Clone, Debug)]
 pub struct SidVoice {
-    //pub freq: u16,
+    /// frequency Voice
+    pub freq: u16,
     /// pulse wave duty cycle
     pub pw: u16,
     pub ctrl_noise: bool,    // 7
@@ -61,6 +62,45 @@ impl SidVoice {
         if ctrl & 0b0000_0001 != 0 {
             self.ctrl_gate = true;
         }
+    }
+
+    pub fn generate_ctrl_register(&self) -> u8 {
+        let mut ctrl = 0;
+
+        // 7 noise
+        if self.ctrl_noise {
+            ctrl |= 0b1000_0000;
+        }
+        // 6 pulse
+        if self.ctrl_pulse {
+            ctrl |= 0b0100_0000;
+        }
+        // 5 sawtooth
+        if self.ctrl_sawtooth {
+            ctrl |= 0b0010_0000;
+        }
+        // 4 triangle
+        if self.ctrl_triangle {
+            ctrl |= 0b0001_0000;
+        }
+        // 3 test
+        if self.ctrl_test {
+            ctrl |= 0b0000_1000;
+        }
+        // 2 ring modulation with voice X
+        if self.ctrl_rm {
+            ctrl |= 0b0000_0100;
+        }
+        // 1 synchronize with voice X
+        if self.ctrl_sync {
+            ctrl |= 0b0000_0010;
+        }
+        // 0 gate
+        if self.ctrl_gate {
+            ctrl |= 0b0000_0001;
+        }
+
+        ctrl
     }
 }
 

@@ -44,8 +44,8 @@ pub struct MdiInstr {
 pub struct InstrOpl {
     pub element: MdiInstr,
     pub volume: u8, // 0-63
-    /// [-1..1]
-    pub finetune: f32,
     /// [-96..95] with 0 <=> C-4
     pub relative_pitch: i8,
+    /// [-1..1]
+    pub finetune: f32,
 }

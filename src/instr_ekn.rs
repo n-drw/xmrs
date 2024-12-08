@@ -10,7 +10,7 @@ pub struct InstrEkn {
     /// Rotation
     pub rotation: u8,
     /// Instrument number
-    pub instr: u8,
+    pub instr: Option<usize>,
 }
 
 impl Default for InstrEkn {
@@ -19,7 +19,7 @@ impl Default for InstrEkn {
             events: 3,
             steps: 8,
             rotation: 0,
-            instr: 0,
+            instr: None,
         }
     }
 }
