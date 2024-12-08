@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-use crate::import::patternslot::PatternSlot;
 use crate::instrument::Instrument;
 use crate::period_helper::FrequencyType;
 use crate::prelude::TrackUnit;
@@ -19,7 +18,7 @@ pub const MAX_NUM_ROWS: usize = 4095;
 pub const MAX_NUM_ROWS: usize = 4095;
 
 /// A row contains its column elements
-pub type Row = Vec<PatternSlot>;
+pub type Row = Vec<TrackUnit>;
 
 /// Patterns are sequences of lines
 pub type Pattern = Vec<Row>;

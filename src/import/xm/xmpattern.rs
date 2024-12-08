@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 use alloc::{vec, vec::Vec};
 
 use crate::import::patternslot::PatternSlot;
-use crate::prelude::*;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct XmPatternHeader {
@@ -50,7 +49,7 @@ impl XmPatternHeader {
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct XmPattern {
     pub header: XmPatternHeader,
-    pub pattern: Pattern,
+    pub pattern: Vec<Vec<PatternSlot>>,
 }
 
 impl XmPattern {

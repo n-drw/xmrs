@@ -11,7 +11,8 @@ use super::xmpattern::XmPattern;
 
 use crate::import::import_memory::{ImportMemory, MemoryType};
 use crate::import::orders_helper;
-use crate::module::{Module, Row};
+use crate::import::patternslot::PatternSlot;
+use crate::module::Module;
 use crate::period_helper::FrequencyType;
 
 #[derive(Default, Serialize, Deserialize, Debug)]
@@ -82,7 +83,8 @@ impl XmModule {
             instrument: vec![],
         };
 
-        let patterns: Vec<Vec<Row>> = self.pattern.iter().map(|p| p.pattern.clone()).collect();
+        let patterns: Vec<Vec<Vec<PatternSlot>>> =
+            self.pattern.iter().map(|p| p.pattern.clone()).collect();
         let mut im = ImportMemory::default();
         module.pattern = im.unpack_patterns(
             module.frequency_type,

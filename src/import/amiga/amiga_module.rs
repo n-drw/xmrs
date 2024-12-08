@@ -18,7 +18,7 @@ pub struct AmigaModule {
     restart_position: u8,
     positions: Vec<u8>, // 128
     tag: String,
-    patterns: Vec<Pattern>, // pattern, row, element
+    patterns: Vec<Vec<Vec<PatternSlot>>>, // pattern, row, element
     audio: Vec<Vec<i8>>,
 }
 
@@ -99,9 +99,9 @@ impl AmigaModule {
 
         let number_of_patterns = amiga.get_number_of_patterns();
         for _p in 0..number_of_patterns {
-            let mut pattern: Pattern = vec![];
+            let mut pattern: Vec<Vec<PatternSlot>> = vec![];
             for _row in 0..64 {
-                let mut row: Row = vec![];
+                let mut row: Vec<PatternSlot> = vec![];
                 for _elt in 0..number_of_tracks {
                     let e = u32::from_be_bytes([data[0], data[1], data[2], data[3]]);
                     let element = PatternSlot::deserialize(e);
@@ -146,10 +146,10 @@ impl AmigaModule {
         return instr;
     }
 
-    fn amiga_to_module_pattern(p: &Pattern) -> Pattern {
-        let mut dp: Pattern = vec![];
+    fn amiga_to_module_pattern(p: &Vec<Vec<PatternSlot>>) -> Vec<Vec<PatternSlot>> {
+        let mut dp: Vec<Vec<PatternSlot>> = vec![];
         for row in p {
-            let mut new_row: Row = vec![];
+            let mut new_row: Vec<PatternSlot> = vec![];
             for e in row {
                 new_row.push(e.clone());
             }

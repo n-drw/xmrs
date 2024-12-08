@@ -1,6 +1,6 @@
 [package]
 name = "xmrs"
-version = "0.9.0"
+version = "0.9.1"
 edition = "2021"
 description = "A library to edit SoundTracker data with pleasure "
 license = "MIT"
@@ -9,7 +9,7 @@ documentation = "https://docs.rs/xmrs"
 repository = "https://codeberg.org/sbechet/xmrs"
 readme = "README.md"
 
-keywords = ["xm", "module", "mod", "s3m", "soundtracker"]
+keywords = ["xm", "module", "mod", "s3m", "it", "soundtracker"]
 categories = ["multimedia::audio", "embedded", "no-std"]
 
 [dependencies]

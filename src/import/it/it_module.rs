@@ -1,5 +1,6 @@
 use crate::import::import_memory::{ImportMemory, MemoryType};
 use crate::import::orders_helper;
+use crate::import::patternslot::PatternSlot;
 use crate::prelude::*;
 
 use bincode::error::DecodeError;
@@ -31,7 +32,7 @@ pub struct ItModule {
     message: String,
     instruments: Vec<ItInstrument>,
     samples_header: Vec<ItSampleHeader>,
-    patterns: Vec<Pattern>,
+    patterns: Vec<Vec<Vec<PatternSlot>>>,
     samples: Vec<Option<SampleDataType>>,
 }
 
@@ -227,7 +228,7 @@ impl ItModule {
 
         // === Patterns =====================================================
 
-        let mut patterns: Vec<Pattern> = vec![];
+        let mut patterns: Vec<Vec<Vec<PatternSlot>>> = vec![];
         for pattern_seek in &pattern_offsets {
             if ser_it_module.len() < *pattern_seek as usize {
                 return Err(DecodeError::LimitExceeded);

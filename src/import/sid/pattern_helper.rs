@@ -165,13 +165,13 @@ impl PatternHelper {
         pattern_order
     }
 
-    pub fn get_patterns(&self, song_number: usize) -> Vec<Pattern> {
+    pub fn get_patterns(&self, song_number: usize) -> Vec<Vec<Vec<PatternSlot>>> {
         let tracks = self.get_tracks();
         let pattern_order = self.get_pattern_order(song_number);
         let po_len = pattern_order.len();
         let mut all_ok: Vec<bool> = vec![false; po_len];
         let mut i_n: [usize; 3] = [0; 3];
-        let mut patterns: Vec<Pattern> = vec![];
+        let mut patterns: Vec<Vec<Vec<PatternSlot>>> = vec![];
 
         loop {
             let mut trks: Vec<&Vec<PatternSlot>> = vec![];
@@ -246,10 +246,12 @@ impl PatternHelper {
         }
     }
 
-    pub fn cleanup_patterns(source: &Vec<Pattern>) -> (Vec<Pattern>, Vec<usize>) {
-        let mut dest: Vec<Pattern> = Vec::new();
+    pub fn cleanup_patterns(
+        source: &Vec<Vec<Vec<PatternSlot>>>,
+    ) -> (Vec<Vec<Vec<PatternSlot>>>, Vec<usize>) {
+        let mut dest: Vec<Vec<Vec<PatternSlot>>> = Vec::new();
         let mut order: Vec<usize> = Vec::new();
-        let mut seen_map: Vec<(Pattern, usize)> = Vec::new(); // Vec of (Pattern, index in dest)
+        let mut seen_map: Vec<(Vec<Vec<PatternSlot>>, usize)> = Vec::new(); // Vec of (Pattern, index in dest)
 
         for pattern in source.iter() {
             if let Some(&(_, idx)) = seen_map.iter().find(|(p, _)| p == pattern) {

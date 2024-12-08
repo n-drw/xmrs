@@ -60,20 +60,20 @@ pub mod sample;
 pub mod track_unit;
 /// All Waveform type
 pub mod waveform;
-// A simple way for random values
+/// A simple way for random values
 pub mod xorshift;
 
 /// The Xmrs Prelude
 pub mod prelude;
 
-// #[cfg(any(
-//     feature = "import",
-//     feature = "import_amiga",
-//     feature = "import_it",
-//     feature = "import_s3m",
-//     feature = "import_sid",
-//     feature = "import_xm",
-// ))]
+#[cfg(any(
+    feature = "import",
+    feature = "import_amiga",
+    feature = "import_it",
+    feature = "import_s3m",
+    feature = "import_sid",
+    feature = "import_xm",
+))]
 /// Import historical files.
 /// Do not use it directly: see Module load* fn impl
 pub mod import;

@@ -324,7 +324,7 @@ pub struct S3mModule {
     header: S3mHeader,
     positions: Vec<u8>,
     instruments: Vec<S3mMetaInstrument>,
-    patterns: Vec<Pattern>,
+    patterns: Vec<Vec<Vec<PatternSlot>>>,
 }
 
 impl S3mModule {

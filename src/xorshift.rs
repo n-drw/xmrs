@@ -1,7 +1,11 @@
+/// Xorshift RNGs algorithm from George Marsaglia - The Florida State University
+/// see https://www.jstatsoft.org/article/view/v008i14/916
+/// NOT for use for cryptographic values
 use serde::{Deserialize, Serialize};
 
 // === rand8 ================================================================
 
+/// A randomized 8-bit value generator using the xorshift algorithm
 #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize, Eq, Hash, PartialEq)]
 #[cfg(any(feature = "rand8"))]
 pub struct XorShift8 {
@@ -17,12 +21,14 @@ impl XorShift8 {
         XorShift8 { state: seed }
     }
 
+    /// Next f32 random number using next rand8
     pub fn next_f32(&mut self) -> f32 {
         let max = u8::MAX as f32;
         self.next().unwrap() as f32 / max
     }
 }
 
+/// Next rand8 number using an Iterator
 #[cfg(any(feature = "rand8"))]
 impl Iterator for XorShift8 {
     type Item = u8;
@@ -37,6 +43,7 @@ impl Iterator for XorShift8 {
 
 // === rand16 ===============================================================
 
+/// A randomized 16-bit value generator using the xorshift algorithm
 #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize, Eq, Hash, PartialEq)]
 #[cfg(any(feature = "rand16"))]
 pub struct XorShift16 {
@@ -52,12 +59,14 @@ impl XorShift16 {
         XorShift16 { state: seed }
     }
 
+    /// Next f32 random number using next rand16
     pub fn next_f32(&mut self) -> f32 {
         let max = u16::MAX as f32;
         self.next().unwrap() as f32 / max
     }
 }
 
+/// Next rand16 number using an Iterator
 #[cfg(any(feature = "rand16"))]
 impl Iterator for XorShift16 {
     type Item = u16;
@@ -72,6 +81,7 @@ impl Iterator for XorShift16 {
 
 // === rand32 ===============================================================
 
+/// A randomized 32-bit value generator using the xorshift algorithm
 #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize, Eq, Hash, PartialEq)]
 pub struct XorShift32 {
     state: u32,
@@ -85,12 +95,14 @@ impl XorShift32 {
         XorShift32 { state: seed }
     }
 
+    /// Next f32 random number using next rand32
     pub fn next_f32(&mut self) -> f32 {
         let max = u32::MAX as f32;
         self.next().unwrap() as f32 / max
     }
 }
 
+/// Next rand32 number using an Iterator
 impl Iterator for XorShift32 {
     type Item = u32;
 
@@ -104,6 +116,7 @@ impl Iterator for XorShift32 {
 
 // === rand64 ===============================================================
 
+/// A randomized 64-bit value generator using the xorshift algorithm
 #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize, Eq, Hash, PartialEq)]
 #[cfg(any(feature = "rand64"))]
 pub struct XorShift64 {
@@ -119,12 +132,14 @@ impl XorShift64 {
         XorShift64 { state: seed }
     }
 
+    /// Next f64 random number using next rand64
     pub fn next_f64(&mut self) -> f64 {
         let max = u64::MAX as f64;
         self.next().unwrap() as f64 / max
     }
 }
 
+/// Next rand64 number using an Iterator
 #[cfg(any(feature = "rand64"))]
 impl Iterator for XorShift64 {
     type Item = u64;
