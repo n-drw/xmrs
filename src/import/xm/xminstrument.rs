@@ -171,7 +171,7 @@ impl XmInstrDefault {
 
                 xmid.volume_fadeout = (id.volume_fadeout * 4095.0 * 4.0 * 2.0) as u16;
 
-                xmid.midi_on = if id.midi.on { 1 } else { 0 };
+                xmid.midi_on = if id.midi.muted { 0 } else { 1 };
                 xmid.midi_channel = id.midi.channel;
                 xmid.midi_program = id.midi.program;
                 xmid.midi_bend = id.midi.bend;
@@ -470,7 +470,7 @@ impl XmInstrument {
                     v.sweep = xmi.vibrato_sweep as f32 / 255.0;
                 }
 
-                id.midi.on = xmi.midi_on == 1;
+                id.midi.muted = xmi.midi_on == 0;
                 id.midi.channel = xmi.midi_channel;
                 id.midi.program = xmi.midi_program;
                 id.midi.bend = xmi.midi_bend;

@@ -115,29 +115,29 @@ impl ImportMemory {
                             // No memory use
                         }
                         MemoryType::It => {
-                            if *a == 0.0 {
-                                *a = self.channel[index][ARPEGGIO].0
+                            if *a == 0 {
+                                *a = self.channel[index][ARPEGGIO].2
                             } else {
-                                self.channel[index][ARPEGGIO].0 = *a;
+                                self.channel[index][ARPEGGIO].2 = *a;
                             }
                             // second arg
-                            if *b == 0.0 {
-                                *b = self.channel[index][ARPEGGIO].1
+                            if *b == 0 {
+                                *b = self.channel[index][ARPEGGIO].3
                             } else {
-                                self.channel[index][ARPEGGIO].1 = *b;
+                                self.channel[index][ARPEGGIO].3 = *b;
                             }
                         }
                         MemoryType::S3m => {
-                            if *a == 0.0 {
-                                *a = self.global[index].0
+                            if *a == 0 {
+                                *a = self.global[index].2
                             } else {
-                                self.global[index].0 = *a;
+                                self.global[index].2 = *a;
                             }
                             // second arg
-                            if *b == 0.0 {
-                                *b = self.global[index].1
+                            if *b == 0 {
+                                *b = self.global[index].3
                             } else {
-                                self.global[index].1 = *b;
+                                self.global[index].3 = *b;
                             }
                         }
                     }
@@ -584,7 +584,7 @@ impl ImportMemory {
                         }
                     }
                 }
-                GlobalEffect::VolumeSlide(a, _b) => {
+                GlobalEffect::VolumeSlide { speed: a, fine: _b } => {
                     match mem {
                         MemoryType::Mod => {
                             // No memory

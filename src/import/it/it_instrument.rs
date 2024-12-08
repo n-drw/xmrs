@@ -488,7 +488,7 @@ impl ItInstrument {
                 instr.initial_filter_resonance = source.instr.initial_filter_resonance;
 
                 instr.midi = InstrMidi {
-                    on: false,
+                    muted: true,
                     channel: source.instr.midi_channel,
                     program: source.instr.midi_program as u16,
                     bank: source.instr.midi_bank,

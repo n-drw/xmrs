@@ -225,8 +225,8 @@ impl ItEffect {
             0x0A => {
                 let param = current.effect_parameter;
                 if param > 0 {
-                    let v1 = (param >> 4) as f32;
-                    let v2 = (param & 0x0F) as f32;
+                    let v1 = (param >> 4) as usize;
+                    let v2 = (param & 0x0F) as usize;
                     return Some(vec![TrackImportEffect::Arpeggio(v1, v2)]);
                 } else {
                     return None;
@@ -537,13 +537,23 @@ impl ItEffect {
                     // Extra delay of x frames
                     // Extends the current row by x ticks.
                     // TODO: If multiple S6x commands are on the same row, the sum of their parameters is used.
-                    0x6 => return Some(GlobalEffect::PatternDelay(param as usize, false)),
+                    0x6 => {
+                        return Some(GlobalEffect::PatternDelay {
+                            quantity: param as usize,
+                            tempo: false,
+                        })
+                    }
                     // SB0 Set loopback point
                     // SBx Loop from previous SB0 x times
                     0xB => return Some(GlobalEffect::PatternLoop(param as usize)),
                     // SEx Pattern delay for x rows.
                     // All effects in the row will be repeated for each row delayed.
-                    0xE => return Some(GlobalEffect::PatternDelay(param as usize, true)),
+                    0xE => {
+                        return Some(GlobalEffect::PatternDelay {
+                            quantity: param as usize,
+                            tempo: true,
+                        })
+                    }
                     // SFx Sets the current channel's active parametered macro.
                     0xF => {
                         return Some(GlobalEffect::MidiMacro(MidiMacroType::Parametric(Some(
@@ -588,10 +598,22 @@ impl ItEffect {
                 let lower_nibble = param & 0x0F;
 
                 return match (upper_nibble, lower_nibble) {
-                    (0, f) => Some(GlobalEffect::VolumeSlide(-(f as f32) / 64.0, false)), // Slide down
-                    (f, 0) => Some(GlobalEffect::VolumeSlide((f >> 4) as f32 / 64.0, false)), // Slide up
-                    (0xF, f) => Some(GlobalEffect::VolumeSlide(-(f as f32) / 64.0, true)), // Fine Slide down
-                    (f, 0xF) => Some(GlobalEffect::VolumeSlide((f >> 4) as f32 / 64.0, true)), // Fine Slide up
+                    (0, f) => Some(GlobalEffect::VolumeSlide {
+                        speed: -(f as f32) / 64.0,
+                        fine: false,
+                    }), // Slide down
+                    (f, 0) => Some(GlobalEffect::VolumeSlide {
+                        speed: (f >> 4) as f32 / 64.0,
+                        fine: false,
+                    }), // Slide up
+                    (0xF, f) => Some(GlobalEffect::VolumeSlide {
+                        speed: -(f as f32) / 64.0,
+                        fine: true,
+                    }), // Fine Slide down
+                    (f, 0xF) => Some(GlobalEffect::VolumeSlide {
+                        speed: (f >> 4) as f32 / 64.0,
+                        fine: true,
+                    }), // Fine Slide up
                     _ => None,
                 };
             }

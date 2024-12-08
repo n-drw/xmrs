@@ -16,7 +16,7 @@ use num_traits::float::Float;
 pub enum TrackImportEffect {
     /// `(1st halftone, 2nd halftone)`
     /// F / XM0=0(0), XM=0(0)
-    Arpeggio(f32, f32),
+    Arpeggio(usize, usize),
 
     /// `position` [0.0..1.0], sets the panning position for the channel
     /// 0.0 is the leftmost position and 1.0 the rightmost
@@ -202,7 +202,10 @@ impl TrackImportEffect {
         if s.0 == 0.0 || s.1 == 0.0 {
             return None;
         } else {
-            return Some(TrackEffect::Vibrato(s.0, s.1));
+            return Some(TrackEffect::Vibrato {
+                speed: s.0,
+                depth: s.1,
+            });
         }
     }
 
@@ -247,21 +250,32 @@ impl TrackImportEffect {
     // all others fx
     fn to_track_effect(&self) -> Option<TrackEffect> {
         match self {
-            TrackImportEffect::Arpeggio(h1, h2) => Some(TrackEffect::Arpeggio(*h1, *h2)),
+            TrackImportEffect::Arpeggio(h1, h2) => Some(TrackEffect::Arpeggio {
+                half1: *h1,
+                half2: *h2,
+            }),
             TrackImportEffect::ChannelPanning(pos) => Some(TrackEffect::ChannelPanning(*pos)),
             TrackImportEffect::ChannelPanningSlide0(speed) => {
-                Some(TrackEffect::ChannelPanningSlide(*speed, true))
+                Some(TrackEffect::ChannelPanningSlide {
+                    speed: *speed,
+                    fine: true,
+                })
             }
             TrackImportEffect::ChannelPanningSlideN(speed) => {
-                Some(TrackEffect::ChannelPanningSlide(*speed, false))
+                Some(TrackEffect::ChannelPanningSlide {
+                    speed: *speed,
+                    fine: false,
+                })
             }
             TrackImportEffect::ChannelVolume(pos) => Some(TrackEffect::ChannelVolume(*pos)),
-            TrackImportEffect::ChannelVolumeSlide0(pos) => {
-                Some(TrackEffect::ChannelVolumeSlide(*pos, true))
-            }
-            TrackImportEffect::ChannelVolumeSlideN(pos) => {
-                Some(TrackEffect::ChannelVolumeSlide(*pos, false))
-            }
+            TrackImportEffect::ChannelVolumeSlide0(pos) => Some(TrackEffect::ChannelVolumeSlide {
+                speed: *pos,
+                fine: true,
+            }),
+            TrackImportEffect::ChannelVolumeSlideN(pos) => Some(TrackEffect::ChannelVolumeSlide {
+                speed: *pos,
+                fine: false,
+            }),
             TrackImportEffect::Glissando(value) => Some(TrackEffect::Glissando(*value)),
             TrackImportEffect::InstrumentFineTune(tune) => {
                 Some(TrackEffect::InstrumentFineTune(*tune))
@@ -290,34 +304,69 @@ impl TrackImportEffect {
             TrackImportEffect::InstrumentVolumeEnvelope(set) => {
                 Some(TrackEffect::InstrumentVolumeEnvelope(*set))
             }
-            TrackImportEffect::NoteCut(tick, past) => Some(TrackEffect::NoteCut(*tick, *past)),
+            TrackImportEffect::NoteCut(tick, past) => Some(TrackEffect::NoteCut {
+                tick: *tick,
+                past: *past,
+            }),
             TrackImportEffect::NoteDelay(ticks) => Some(TrackEffect::NoteDelay(*ticks)),
-            TrackImportEffect::NoteFadeOut(tick, past) => {
-                Some(TrackEffect::NoteFadeOut(*tick, *past))
-            }
-            TrackImportEffect::NoteOff(tick, past) => Some(TrackEffect::NoteOff(*tick, *past)),
+            TrackImportEffect::NoteFadeOut(tick, past) => Some(TrackEffect::NoteFadeOut {
+                tick: *tick,
+                past: *past,
+            }),
+            TrackImportEffect::NoteOff(tick, past) => Some(TrackEffect::NoteOff {
+                tick: *tick,
+                past: *past,
+            }),
             TrackImportEffect::NoteRetrig(interval) => Some(TrackEffect::NoteRetrig(*interval)),
             TrackImportEffect::NoteRetrigExtended(interval, vol) => {
-                Some(TrackEffect::NoteRetrigExtended(*interval, *vol))
+                Some(TrackEffect::NoteRetrigExtended {
+                    interval: *interval,
+                    volume_change: *vol,
+                })
             }
-            TrackImportEffect::Panbrello(speed, depth) => {
-                Some(TrackEffect::Panbrello(*speed, *depth))
-            }
+            TrackImportEffect::Panbrello(speed, depth) => Some(TrackEffect::Panbrello {
+                speed: *speed,
+                depth: *depth,
+            }),
             TrackImportEffect::PanbrelloWaveform(waveform, retrig) => {
-                Some(TrackEffect::PanbrelloWaveform(*waveform, *retrig))
+                Some(TrackEffect::PanbrelloWaveform {
+                    waveform: *waveform,
+                    retrig: *retrig,
+                })
             }
-            TrackImportEffect::Tremolo(speed, depth) => Some(TrackEffect::Tremolo(*speed, *depth)),
+            TrackImportEffect::Tremolo(speed, depth) => Some(TrackEffect::Tremolo {
+                speed: *speed,
+                depth: *depth,
+            }),
             TrackImportEffect::TremoloWaveform(waveform, retrig) => {
-                Some(TrackEffect::TremoloWaveform(*waveform, *retrig))
+                Some(TrackEffect::TremoloWaveform {
+                    waveform: *waveform,
+                    retrig: *retrig,
+                })
             }
-            TrackImportEffect::Tremor(on, off) => Some(TrackEffect::Tremor(*on, *off)),
+            TrackImportEffect::Tremor(on, off) => Some(TrackEffect::Tremor {
+                on_time: *on,
+                off_time: *off,
+            }),
             TrackImportEffect::VibratoSpeed(speed) => Some(TrackEffect::VibratoSpeed(*speed)),
             TrackImportEffect::VibratoWaveform(waveform, retrig) => {
-                Some(TrackEffect::VibratoWaveform(*waveform, *retrig))
+                Some(TrackEffect::VibratoWaveform {
+                    waveform: *waveform,
+                    retrig: *retrig,
+                })
             }
-            TrackImportEffect::Volume(value, tick) => Some(TrackEffect::Volume(*value, *tick)),
-            TrackImportEffect::VolumeSlide0(value) => Some(TrackEffect::VolumeSlide(*value, true)),
-            TrackImportEffect::VolumeSlideN(value) => Some(TrackEffect::VolumeSlide(*value, false)),
+            TrackImportEffect::Volume(value, tick) => Some(TrackEffect::Volume {
+                value: *value,
+                tick: *tick,
+            }),
+            TrackImportEffect::VolumeSlide0(value) => Some(TrackEffect::VolumeSlide {
+                speed: *value,
+                fine: true,
+            }),
+            TrackImportEffect::VolumeSlideN(value) => Some(TrackEffect::VolumeSlide {
+                speed: *value,
+                fine: false,
+            }),
             _ => None,
         }
     }

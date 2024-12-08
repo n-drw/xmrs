@@ -27,8 +27,8 @@ impl ModXmEffect {
             0x00 => {
                 let param = current.effect_parameter;
                 if param > 0 {
-                    let v1 = (param >> 4) as f32;
-                    let v2 = (param & 0x0F) as f32;
+                    let v1 = (param >> 4) as usize;
+                    let v2 = (param & 0x0F) as usize;
                     return Some(vec![TrackImportEffect::Arpeggio(v1, v2)]);
                 } else {
                     return None;
@@ -365,7 +365,10 @@ impl ModXmEffect {
                     // E6y: Pattern loop
                     0x6 => return Some(GlobalEffect::PatternLoop(param as usize)),
                     // EEy: Pattern delay
-                    0xE => Some(GlobalEffect::PatternDelay(param as usize, true)),
+                    0xE => Some(GlobalEffect::PatternDelay {
+                        quantity: param as usize,
+                        tempo: true,
+                    }),
                     _ => None,
                 }
             }
@@ -391,8 +394,14 @@ impl ModXmEffect {
                 let lower_nibble = param & 0x0F;
 
                 return match (upper_nibble, lower_nibble) {
-                    (0, f) => Some(GlobalEffect::VolumeSlide(-(f as f32) / 64.0, false)), // Slide down
-                    (f, 0) => Some(GlobalEffect::VolumeSlide((f >> 4) as f32 / 64.0, false)), // Slide up
+                    (0, f) => Some(GlobalEffect::VolumeSlide {
+                        speed: -(f as f32) / 64.0,
+                        fine: false,
+                    }), // Slide down
+                    (f, 0) => Some(GlobalEffect::VolumeSlide {
+                        speed: (f >> 4) as f32 / 64.0,
+                        fine: false,
+                    }), // Slide up
                     _ => None,
                 };
             }
