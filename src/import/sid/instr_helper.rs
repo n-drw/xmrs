@@ -15,21 +15,21 @@ pub struct InstrHelper;
 impl InstrHelper {
     fn sid_to_sample(voice: &SidVoice) -> Sample {
         let mut name = String::from("Unknown Waveform");
-        let mut data = SampleDataType::Mono8(vec![0; 128]);
-        let flags = LoopType::Forward;
+        let mut data = Some(SampleDataType::Mono8(vec![0; 128]));
+        let loop_flag = LoopType::Forward;
 
         if voice.ctrl_noise {
             name = String::from("Noise");
-            data = Self::generate_sid_noise_sample();
+            data = Some(Self::generate_sid_noise_sample());
         } else if voice.ctrl_pulse {
             name = format!("Pulse Wave {}", voice.pw);
-            data = Self::generate_pulse_sample(voice.pw);
+            data = Some(Self::generate_pulse_sample(voice.pw));
         } else if voice.ctrl_sawtooth {
             name = String::from("Sawtooth Wave");
-            data = Self::generate_sawtooth_sample();
+            data = Some(Self::generate_sawtooth_sample());
         } else if voice.ctrl_triangle {
             name = String::from("Triangle Wave");
-            data = Self::generate_triangle_sample();
+            data = Some(Self::generate_triangle_sample());
         }
 
         Sample {
@@ -38,8 +38,11 @@ impl InstrHelper {
             loop_length: 128,
             volume: 1.0,
             finetune: 0.0,
-            flags,
+            loop_flag,
             panning: 0.5,
+            sustain_loop_flag: LoopType::No,
+            sustain_loop_start: 0,
+            sustain_loop_length: 0,
             relative_pitch: 0, // C-4
             data,
         }
@@ -178,7 +181,7 @@ impl InstrHelper {
         //FIXME: instr.sample = ...;
         let mut s: Sample = Self::sid_to_sample(&sid);
         s.relative_pitch = 24;
-        instr.sample = vec![s];
+        instr.sample = vec![Some(s)];
 
         instr
     }
