@@ -8,6 +8,14 @@ use micromath::F32Ext;
 #[allow(unused_imports)]
 use num_traits::float::Float;
 
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum NoteRetrigOperator {
+    None,
+    Sum(f32),
+    Mul(f32),
+}
+
 #[repr(u8)]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum TrackEffect {
@@ -121,14 +129,12 @@ pub enum TrackEffect {
         past: bool,
     },
 
-    /// `interval`, this effect will retrigs the note with the specified interval
+    /// `(speed, volume modifier)`
     /// Misc effect
-    NoteRetrig(usize),
-
-    /// `(interval, volume change)`
-    /// Extended version of the `TrackEffect::NoteRetrig` effect
-    /// Misc effect
-    NoteRetrigExtended { interval: usize, volume_change: f32 },
+    NoteRetrig {
+        speed: usize,
+        volume_modifier: NoteRetrigOperator,
+    },
 
     /// `(speed, depth)`, set Panbrello
     /// Panning effect
@@ -363,21 +369,18 @@ impl TrackEffect {
                 tick: h1 + o1,
                 past: *o2,
             }),
-            (TrackEffect::NoteRetrig(h1), TrackEffect::NoteRetrig(o1)) => {
-                Some(TrackEffect::NoteRetrig(h1 + o1))
-            }
             (
-                TrackEffect::NoteRetrigExtended {
-                    interval: h1,
-                    volume_change: h2,
+                TrackEffect::NoteRetrig {
+                    speed: h1,
+                    volume_modifier: h2,
                 },
-                TrackEffect::NoteRetrigExtended {
-                    interval: o1,
-                    volume_change: o2,
+                TrackEffect::NoteRetrig {
+                    speed: o1,
+                    volume_modifier: _o2,
                 },
-            ) => Some(TrackEffect::NoteRetrigExtended {
-                interval: h1 + o1,
-                volume_change: h2 + o2,
+            ) => Some(TrackEffect::NoteRetrig {
+                speed: h1 + o1,
+                volume_modifier: h2.clone(), //FIXME: What about Add and Mul NoteRetrigOperator at the same time?
             }),
             (
                 TrackEffect::Panbrello {

@@ -335,11 +335,11 @@ impl ItEffect {
             // Effect Retrigger Note (Qxy) -> Retriggers a note after y ticks with volume modifier x
             0x11 => {
                 let param = current.effect_parameter;
-                let vol = (param >> 4) as f32 / 16.0;
+                let vol = param >> 4;
                 let speed = param & 0x0F;
                 return Some(vec![TrackImportEffect::NoteRetrigExtended(
                     speed as usize,
-                    vol,
+                    vol as usize,
                 )]);
             }
 

@@ -1,5 +1,5 @@
 /// Generic Effect enum Helper to parse and record memory data definitively to TrackEffect.
-use crate::{effect::TrackEffect, prelude::NewNoteAction, waveform::Waveform};
+use crate::prelude::*;
 use alloc::vec;
 use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
@@ -93,10 +93,10 @@ pub enum TrackImportEffect {
     /// V / XM0=0xE9(E9), XM=0xE9(E9)
     NoteRetrig(usize),
 
-    /// `(interval, volume change)`
+    /// `(interval, volume modifier)`
     /// Extended version of the `TrackImportEffectffect::NoteRetrig` effect
     /// V / XM0=0x1B(R), XM=0x1B(R)
-    NoteRetrigExtended(usize, f32),
+    NoteRetrigExtended(usize, usize),
 
     /// `(speed, depth)`, set Panbrello
     Panbrello(f32, f32),
@@ -317,11 +317,32 @@ impl TrackImportEffect {
                 tick: *tick,
                 past: *past,
             }),
-            TrackImportEffect::NoteRetrig(interval) => Some(TrackEffect::NoteRetrig(*interval)),
+            TrackImportEffect::NoteRetrig(interval) => Some(TrackEffect::NoteRetrig {
+                speed: *interval,
+                volume_modifier: NoteRetrigOperator::None,
+            }),
             TrackImportEffect::NoteRetrigExtended(interval, vol) => {
-                Some(TrackEffect::NoteRetrigExtended {
-                    interval: *interval,
-                    volume_change: *vol,
+                let volume = match *vol {
+                    1 => NoteRetrigOperator::Sum(-1.0),
+                    2 => NoteRetrigOperator::Sum(-2.0),
+                    3 => NoteRetrigOperator::Sum(-4.0),
+                    4 => NoteRetrigOperator::Sum(-8.0),
+                    5 => NoteRetrigOperator::Sum(-16.0),
+                    6 => NoteRetrigOperator::Mul(2.0 / 3.0),
+                    7 => NoteRetrigOperator::Mul(1.0 / 2.0),
+                    9 => NoteRetrigOperator::Sum(1.0),
+                    0xA => NoteRetrigOperator::Sum(2.0),
+                    0xB => NoteRetrigOperator::Sum(4.0),
+                    0xC => NoteRetrigOperator::Sum(8.0),
+                    0xD => NoteRetrigOperator::Sum(16.0),
+                    0xE => NoteRetrigOperator::Mul(3.0 / 2.0),
+                    0xF => NoteRetrigOperator::Mul(2.0),
+                    _ => NoteRetrigOperator::None,
+                };
+
+                Some(TrackEffect::NoteRetrig {
+                    speed: *interval,
+                    volume_modifier: volume,
                 })
             }
             TrackImportEffect::Panbrello(speed, depth) => Some(TrackEffect::Panbrello {

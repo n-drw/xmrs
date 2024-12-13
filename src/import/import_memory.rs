@@ -71,7 +71,7 @@ const PORTAMENTO_FINE_UP: usize = 5;
 const PORTAMENTO_FINE_DOWN: usize = 6;
 const PORTAMENTO_FINE_EXTRA_UP: usize = 7;
 const PORTAMENTO_FINE_EXTRA_DOWN: usize = 8;
-const NOTE_RETRIG_EXTENDED: usize = 9;
+const NOTE_RETRIG: usize = 9;
 const TONE_PORTAMENTO: usize = 10;
 const TREMOLO: usize = 11;
 const TREMOR: usize = 12;
@@ -311,33 +311,33 @@ impl ImportMemory {
                     }
                 }
 
-                TrackImportEffect::NoteRetrigExtended(a, b) => {
+                TrackImportEffect::NoteRetrigExtended(speed, vol) => {
                     match mem {
                         MemoryType::Mod => {
                             // No memory use
                         }
                         MemoryType::Xm | MemoryType::It => {
-                            if *a == 0 {
-                                *a = self.channel[index][NOTE_RETRIG_EXTENDED].2
+                            if *speed == 0 {
+                                *speed = self.channel[index][NOTE_RETRIG].2
                             } else {
-                                self.channel[index][NOTE_RETRIG_EXTENDED].2 = *a;
+                                self.channel[index][NOTE_RETRIG].2 = *speed;
                             }
-                            if *b == 0.0 {
-                                *b = self.channel[index][NOTE_RETRIG_EXTENDED].0
+                            if *vol == 0 {
+                                *vol = self.channel[index][NOTE_RETRIG].3
                             } else {
-                                self.channel[index][NOTE_RETRIG_EXTENDED].0 = *b;
+                                self.channel[index][NOTE_RETRIG].3 = *vol;
                             }
                         }
                         MemoryType::S3m => {
-                            if *a == 0 {
-                                *a = self.global[index].2
+                            if *speed == 0 {
+                                *speed = self.global[index].2
                             } else {
-                                self.global[index].2 = *a;
+                                self.global[index].2 = *speed;
                             }
-                            if *b == 0.0 {
-                                *b = self.global[index].0
+                            if *vol == 0 {
+                                *vol = self.channel[index][NOTE_RETRIG].3
                             } else {
-                                self.global[index].0 = *b;
+                                self.channel[index][NOTE_RETRIG].3 = *vol;
                             }
                         }
                     }

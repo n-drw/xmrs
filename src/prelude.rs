@@ -8,7 +8,7 @@
 /// ```
 ///
 pub use crate::{
-    effect::{GlobalEffect, TrackEffect},
+    effect::{GlobalEffect, NoteRetrigOperator, TrackEffect},
     envelope::{Envelope, EnvelopePoint},
     instr_default::{DuplicateCheckAction, DuplicateCheckType, InstrDefault, NewNoteAction},
     instr_ekn::InstrEkn,
