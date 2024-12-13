@@ -11,11 +11,11 @@ use crate::prelude::*;
 pub struct AmigaSample {
     #[serde(deserialize_with = "deserialize_string_22")]
     pub name: String,
-    pub length: u16,
+    pub length_div2: u16,
     pub finetune: u8,
     pub volume: u8,
-    pub repeat_offset: u16,
-    pub repeat_length: u16,
+    pub repeat_offset_div2: u16,
+    pub repeat_length_div2: u16,
 }
 
 impl fmt::Debug for AmigaSample {
@@ -26,9 +26,9 @@ impl fmt::Debug for AmigaSample {
             self.name,
             self.volume,
             self.finetune,
-            self.length,
-            self.repeat_offset,
-            self.repeat_length
+            2 * self.length_div2 as usize,
+            2 * self.repeat_offset_div2 as usize,
+            2 * self.repeat_length_div2 as usize
         )
     }
 }
@@ -40,11 +40,9 @@ impl AmigaSample {
             bincode::config::legacy(),
         ) {
             Ok((mut aspl, _)) => {
-                // bincode::DefaultOptions::new().with_big_endian() seems not working?
-                // manual ROR with * 2...
-                aspl.length = 2 * aspl.length.rotate_right(8);
-                aspl.repeat_offset = 2 * aspl.repeat_offset.rotate_right(8);
-                aspl.repeat_length = 2 * aspl.repeat_length.rotate_right(8);
+                aspl.length_div2 = aspl.length_div2.rotate_right(8);
+                aspl.repeat_offset_div2 = aspl.repeat_offset_div2.rotate_right(8);
+                aspl.repeat_length_div2 = aspl.repeat_length_div2.rotate_right(8);
                 Ok((&ser_sample[30..], aspl))
             }
             Err(e) => Err(e),
@@ -53,13 +51,13 @@ impl AmigaSample {
 
     pub fn to_sample(&self) -> Sample {
         let f = (((self.finetune << 4) as i8) as f32 / 127.0).clamp(-1.0, 1.0);
-        let ro = if self.repeat_offset < self.length {
-            self.repeat_offset
+        let ro = if 2 * self.repeat_offset_div2 < 2 * self.length_div2 {
+            2 * self.repeat_offset_div2
         } else {
             0
         };
-        let rl = if ro + self.repeat_length <= self.length {
-            self.repeat_length
+        let rl = if ro + 2 * self.repeat_length_div2 <= self.length_div2 {
+            self.repeat_length_div2
         } else {
             0
         };

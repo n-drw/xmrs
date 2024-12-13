@@ -62,7 +62,7 @@ impl AmigaModule {
         };
 
         amiga.title = String::from_utf8_lossy(&ser_amiga_module[0..22]).to_string();
-        amiga.title.trim_matches(char::from(0)).trim().to_string();
+        amiga.title = amiga.title.split('\0').next().unwrap_or("").trim().to_string();
 
         // get tag if any?
         amiga.tag = String::from_utf8_lossy(&ser_amiga_module[0x438..0x438 + 4]).to_string();
@@ -94,7 +94,7 @@ impl AmigaModule {
         // patterns
         let number_of_tracks = match amiga.get_number_of_tracks() {
             Some(n) => n as usize,
-            None => return Result::Err(DecodeError::Other("Not an amiga module?")),
+            None => 4, // default is 4...return Result::Err(DecodeError::Other("Not an amiga module?")),
         };
 
         let number_of_patterns = amiga.get_number_of_patterns();
@@ -116,8 +116,8 @@ impl AmigaModule {
         // audio
         for i_spl in 0..amiga.samples.len() {
             // small hack to force COUNTRY.MOD loading
-            let l = if amiga.samples[i_spl].length as usize <= data.len() {
-                amiga.samples[i_spl].length as usize
+            let l = if 2 * amiga.samples[i_spl].length_div2 as usize <= data.len() {
+                2 * amiga.samples[i_spl].length_div2 as usize
             } else {
                 data.len()
             };
