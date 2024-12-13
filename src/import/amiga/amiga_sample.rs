@@ -51,13 +51,13 @@ impl AmigaSample {
 
     pub fn to_sample(&self) -> Sample {
         let f = (((self.finetune << 4) as i8) as f32 / 127.0).clamp(-1.0, 1.0);
-        let ro = if 2 * self.repeat_offset_div2 < 2 * self.length_div2 {
-            2 * self.repeat_offset_div2
+        let ro = if 2 * (self.repeat_offset_div2 as usize) < 2 * (self.length_div2 as usize) {
+            2 * self.repeat_offset_div2 as usize
         } else {
-            0
+            0 as usize
         };
-        let rl = if ro + 2 * self.repeat_length_div2 <= self.length_div2 {
-            self.repeat_length_div2
+        let rl = if ro + 2 * (self.repeat_length_div2 as usize) <= 2 * (self.length_div2 as usize) {
+            2 * self.repeat_length_div2 as usize
         } else {
             0
         };
