@@ -250,7 +250,7 @@ impl ModXmEffect {
         freq_type: FrequencyType,
         current: &PatternSlot,
     ) -> Option<TrackImportEffect> {
-        match current.volume {
+        match current.volume >> 4 {
             0x0 => return None,
             // V - Set volume (0..63)
             0x1..=0x4 => {
