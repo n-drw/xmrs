@@ -147,6 +147,8 @@ impl AmigaModule {
         let mut idef = InstrDefault::default();
         idef.sample.push(Some(sample));
 
+        idef.sample_for_pitch = [Some(0); 120];
+
         instr.instr_type = InstrumentType::Default(idef);
 
         return instr;
