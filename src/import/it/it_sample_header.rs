@@ -590,15 +590,15 @@ impl ItSampleHeader {
         }
     }
 
-    pub fn to_vibrato(&self) -> InstrVibrato {
+    pub fn to_vibrato(&self) -> Vibrato {
         let wf = match self.vibrato_waveform {
             1 => Waveform::TranslatedRampDown,
             2 => Waveform::TranslatedSquare,
-            3 => Waveform::new_random(None),
+            3 => Waveform::Random,
             _ => Waveform::TranslatedSine,
         };
 
-        InstrVibrato {
+        Vibrato {
             waveform: wf,
             speed: self.vibrato_speed as f32 / 64.0,
             depth: self.vibrato_depth as f32 / 64.0,

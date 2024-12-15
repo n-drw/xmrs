@@ -16,12 +16,12 @@ pub use crate::{
     instr_opl::{InstrOpl, MdiInstr, MdiOpl},
     instr_robsid::InstrRobSid,
     instr_sid::InstrSid,
-    instr_vibrato::InstrVibrato,
     instrument::{Instrument, InstrumentType},
     module::{Module, Pattern, Row, MAX_NUM_ROWS},
     period_helper::{FrequencyType, PeriodHelper},
     pitch::Pitch,
     sample::{LoopType, Sample, SampleDataType},
     track_unit::TrackUnit,
+    vibrato::Vibrato,
     waveform::Waveform,
 };

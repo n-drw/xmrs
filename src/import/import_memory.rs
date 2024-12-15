@@ -164,7 +164,7 @@ impl ImportMemory {
                     }
                 }
 
-                TrackImportEffect::ChannelPanningSlideN(a) => {
+                TrackImportEffect::PanningSlideN(a) => {
                     match mem {
                         MemoryType::Mod => {
                             // No memory use

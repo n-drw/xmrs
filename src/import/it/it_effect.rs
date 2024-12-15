@@ -316,18 +316,14 @@ impl ItEffect {
                 let lower_nibble = param & 0x0F;
 
                 return match (upper_nibble, lower_nibble) {
-                    (f, 0) => Some(vec![TrackImportEffect::ChannelPanningSlideN(
+                    (f, 0) => Some(vec![TrackImportEffect::PanningSlideN(
                         (f >> 4) as f32 / 16.0,
                     )]), // Slide up (right)
-                    (0, f) => Some(vec![TrackImportEffect::ChannelPanningSlideN(
-                        -(f as f32) / 16.0,
-                    )]), // Slide down (left)
-                    (f, 0xF) => Some(vec![TrackImportEffect::ChannelPanningSlide0(
+                    (0, f) => Some(vec![TrackImportEffect::PanningSlideN(-(f as f32) / 16.0)]), // Slide down (left)
+                    (f, 0xF) => Some(vec![TrackImportEffect::PanningSlide0(
                         (f >> 4) as f32 / 16.0,
                     )]), // Slide up (right)
-                    (0xF, f) => Some(vec![TrackImportEffect::ChannelPanningSlide0(
-                        -(f as f32) / 16.0,
-                    )]), // Slide down (left)
+                    (0xF, f) => Some(vec![TrackImportEffect::PanningSlide0(-(f as f32) / 16.0)]), // Slide down (left)
                     _ => None,
                 };
             }
@@ -361,7 +357,7 @@ impl ItEffect {
                         let waveform = match param & 0b0000_0011 {
                             1 => Waveform::RampDown,
                             2 => Waveform::Square,
-                            3 => Waveform::new_random(None),
+                            3 => Waveform::Random,
                             _ => Waveform::Sine,
                         };
                         return Some(vec![TrackImportEffect::VibratoWaveform(waveform, true)]);
@@ -371,7 +367,7 @@ impl ItEffect {
                         let waveform = match param & 0b0000_0011 {
                             1 => Waveform::RampDown,
                             2 => Waveform::Square,
-                            3 => Waveform::new_random(None),
+                            3 => Waveform::Random,
                             _ => Waveform::Sine,
                         };
                         return Some(vec![TrackImportEffect::TremoloWaveform(waveform, true)]);
@@ -381,7 +377,7 @@ impl ItEffect {
                         let waveform = match param & 0b0000_0011 {
                             1 => Waveform::RampDown,
                             2 => Waveform::Square,
-                            3 => Waveform::new_random(None),
+                            3 => Waveform::Random,
                             _ => Waveform::Sine,
                         };
                         return Some(vec![TrackImportEffect::PanbrelloWaveform(waveform, true)]);
@@ -458,11 +454,7 @@ impl ItEffect {
                             _ => return None,
                         }
                     }
-                    0x8 => {
-                        return Some(vec![TrackImportEffect::ChannelPanning(
-                            (param as f32) / 16.0,
-                        )])
-                    }
+                    0x8 => return Some(vec![TrackImportEffect::Panning((param as f32) / 16.0)]),
                     0x9 => return Some(vec![TrackImportEffect::InstrumentSurround(param == 1)]),
                     0xA => {
                         return Some(vec![TrackImportEffect::InstrumentSampleOffsetAddHigh(
@@ -487,7 +479,7 @@ impl ItEffect {
 
             // Effect Set panning position (Xxx)
             0x18 => {
-                return Some(vec![TrackImportEffect::ChannelPanning(
+                return Some(vec![TrackImportEffect::Panning(
                     (current.effect_parameter as f32) / 256.0,
                 )])
             }
@@ -643,7 +635,7 @@ impl ItEffect {
         // Set Panning (pxx)
         if (slot.volume & 0x7F) <= 64 {
             let p = (slot.volume & 0x7F) as f32 / 64.0;
-            return Some(TrackImportEffect::ChannelPanning(p));
+            return Some(TrackImportEffect::Panning(p));
         }
 
         let temp = if slot.volume & 0x80 == 0 {

@@ -18,20 +18,11 @@ pub enum Waveform {
     Sine,
     RampDown,
     Square,
-    Random {
-        rng: XorShift32,
-    },
+    Random,
 }
 
 impl Waveform {
-    pub fn new_random(seed: Option<u32>) -> Self {
-        let seed = if let Some(v) = seed { v } else { 4294967291 };
-        Waveform::Random {
-            rng: XorShift32::new(seed),
-        }
-    }
-
-    pub fn value(&mut self, step: f32) -> f32 {
+    fn value(&self, step: f32) -> f32 {
         let step = step % 1.0;
         return match self {
             Waveform::TranslatedSine => 0.5 + 0.5 * (core::f32::consts::TAU * (step + 0.25)).sin(),
@@ -65,7 +56,31 @@ impl Waveform {
                     1.0
                 }
             }
-            Waveform::Random { rng } => rng.next_f32(),
+            Waveform::Random => 0.0,
         };
+    }
+}
+
+pub struct WaveformState {
+    wf: Waveform,
+    rng: XorShift32,
+}
+
+impl Default for WaveformState {
+    fn default() -> Self {
+        Self {
+            wf: Waveform::default(),
+            rng: XorShift32::default(),
+        }
+    }
+}
+
+impl WaveformState {
+    pub fn value(&mut self, step: f32) -> f32 {
+        if let Waveform::Random = self.wf {
+            self.rng.next_f32()
+        } else {
+            self.wf.value(step)
+        }
     }
 }

@@ -62,7 +62,13 @@ impl AmigaModule {
         };
 
         amiga.title = String::from_utf8_lossy(&ser_amiga_module[0..22]).to_string();
-        amiga.title = amiga.title.split('\0').next().unwrap_or("").trim().to_string();
+        amiga.title = amiga
+            .title
+            .split('\0')
+            .next()
+            .unwrap_or("")
+            .trim()
+            .to_string();
 
         // get tag if any?
         amiga.tag = String::from_utf8_lossy(&ser_amiga_module[0x438..0x438 + 4]).to_string();

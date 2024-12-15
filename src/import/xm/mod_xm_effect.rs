@@ -92,7 +92,7 @@ impl ModXmEffect {
                 return Some(vec![TrackImportEffect::Tremolo(speed, depth)]);
             }
             0x08 => {
-                return Some(vec![TrackImportEffect::ChannelPanning(
+                return Some(vec![TrackImportEffect::Panning(
                     (current.effect_parameter as f32) / 255.0,
                 )])
             }
@@ -189,12 +189,10 @@ impl ModXmEffect {
                 let lower_nibble = param & 0x0F;
 
                 return match (upper_nibble, lower_nibble) {
-                    (f, 0) => Some(vec![TrackImportEffect::ChannelPanningSlideN(
+                    (f, 0) => Some(vec![TrackImportEffect::PanningSlideN(
                         (f >> 4) as f32 / 16.0,
                     )]), // Slide up
-                    (0, f) => Some(vec![TrackImportEffect::ChannelPanningSlideN(
-                        -(f as f32) / 16.0,
-                    )]), // Slide down
+                    (0, f) => Some(vec![TrackImportEffect::PanningSlideN(-(f as f32) / 16.0)]), // Slide down
                     _ => None,
                 };
             }
@@ -309,20 +307,16 @@ impl ModXmEffect {
                 }
             }
             // P - Set panning
-            0xC => {
-                return Some(TrackImportEffect::ChannelPanning(
-                    (current.volume as f32) / 16.0,
-                ))
-            }
+            0xC => return Some(TrackImportEffect::Panning((current.volume as f32) / 16.0)),
             // L - Panning slide left
             0xD => {
-                return Some(TrackImportEffect::ChannelPanningSlideN(
+                return Some(TrackImportEffect::PanningSlideN(
                     -(current.volume as f32) / 16.0,
                 ))
             }
             // R - Panning slide right
             0xE => {
-                return Some(TrackImportEffect::ChannelPanningSlideN(
+                return Some(TrackImportEffect::PanningSlideN(
                     (current.volume as f32) / 16.0,
                 ))
             }

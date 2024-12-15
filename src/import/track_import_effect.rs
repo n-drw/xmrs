@@ -18,16 +18,6 @@ pub enum TrackImportEffect {
     /// F / XM0=0(0), XM=0(0)
     Arpeggio(usize, usize),
 
-    /// `position` [0.0..1.0], sets the panning position for the channel
-    /// 0.0 is the leftmost position and 1.0 the rightmost
-    /// P / XM0=8(8), XM0=v0xC(vP)
-    ChannelPanning(f32),
-
-    /// `speed`, this effect slide the panning position
-    /// P / XM0=0x19(P), XM=0x19(P), XM0=v0xD(L), XM0=v0xE(R)
-    ChannelPanningSlide0(f32),
-    ChannelPanningSlideN(f32),
-
     /// `value`, set the Channel Volume
     /// Channel Volume
     ChannelVolume(f32),
@@ -104,6 +94,16 @@ pub enum TrackImportEffect {
     /// `(waveform, retrig)`, change Panbrello waveform.
     /// `retrig` to true to retrig when a new instrument is played.
     PanbrelloWaveform(Waveform, bool),
+
+    /// `position` [0.0..1.0], sets the panning position for the channel
+    /// 0.0 is the leftmost position and 1.0 the rightmost
+    /// P / XM0=8(8), XM0=v0xC(vP)
+    Panning(f32),
+
+    /// `speed`, this effect slide the panning position
+    /// P / XM0=0x19(P), XM=0x19(P), XM0=v0xD(L), XM0=v0xE(R)
+    PanningSlide0(f32),
+    PanningSlideN(f32),
 
     /// `speed`
     /// F / XM0=1(1), XM=1(1), XM0=2(2), XM=2(2), XM0=0xE1(E1), XM0=0xE2(E2), XM0=0x21(X1), XM=0x21(X2)
@@ -250,23 +250,25 @@ impl TrackImportEffect {
     // all others fx
     fn to_track_effect(&self) -> Option<TrackEffect> {
         match self {
-            TrackImportEffect::Arpeggio(h1, h2) => Some(TrackEffect::Arpeggio {
-                half1: *h1,
-                half2: *h2,
+            TrackImportEffect::Arpeggio(h1, h2) => {
+                if *h1 != 0 || *h2 != 0 {
+                    Some(TrackEffect::Arpeggio {
+                        half1: *h1,
+                        half2: *h2,
+                    })
+                } else {
+                    None
+                }
+            }
+            TrackImportEffect::Panning(pos) => Some(TrackEffect::Panning(*pos)),
+            TrackImportEffect::PanningSlide0(speed) => Some(TrackEffect::PanningSlide {
+                speed: *speed,
+                fine: true,
             }),
-            TrackImportEffect::ChannelPanning(pos) => Some(TrackEffect::ChannelPanning(*pos)),
-            TrackImportEffect::ChannelPanningSlide0(speed) => {
-                Some(TrackEffect::ChannelPanningSlide {
-                    speed: *speed,
-                    fine: true,
-                })
-            }
-            TrackImportEffect::ChannelPanningSlideN(speed) => {
-                Some(TrackEffect::ChannelPanningSlide {
-                    speed: *speed,
-                    fine: false,
-                })
-            }
+            TrackImportEffect::PanningSlideN(speed) => Some(TrackEffect::PanningSlide {
+                speed: *speed,
+                fine: false,
+            }),
             TrackImportEffect::ChannelVolume(pos) => Some(TrackEffect::ChannelVolume(*pos)),
             TrackImportEffect::ChannelVolumeSlide0(pos) => Some(TrackEffect::ChannelVolumeSlide {
                 speed: *pos,
@@ -308,7 +310,13 @@ impl TrackImportEffect {
                 tick: *tick,
                 past: *past,
             }),
-            TrackImportEffect::NoteDelay(ticks) => Some(TrackEffect::NoteDelay(*ticks)),
+            TrackImportEffect::NoteDelay(ticks) => {
+                if *ticks != 0 {
+                    Some(TrackEffect::NoteDelay(*ticks))
+                } else {
+                    None
+                }
+            }
             TrackImportEffect::NoteFadeOut(tick, past) => Some(TrackEffect::NoteFadeOut {
                 tick: *tick,
                 past: *past,

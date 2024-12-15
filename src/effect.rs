@@ -8,12 +8,17 @@ use micromath::F32Ext;
 #[allow(unused_imports)]
 use num_traits::float::Float;
 
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum NoteRetrigOperator {
     None,
     Sum(f32),
     Mul(f32),
+}
+
+impl Default for NoteRetrigOperator {
+    fn default() -> Self {
+        NoteRetrigOperator::None
+    }
 }
 
 #[repr(u8)]
@@ -25,19 +30,6 @@ pub enum TrackEffect {
         half1: usize,
         /// 2nd halftone
         half2: usize,
-    },
-
-    /// `position` [0.0..1.0], sets the panning position for the channel
-    /// 0.0 is the leftmost position and 1.0 the rightmost
-    /// Panning effect
-    ChannelPanning(f32),
-
-    /// `(speed, tick)`, this effect slide the panning position
-    /// Panning effect
-    ChannelPanningSlide {
-        speed: f32,
-        /// if true, only at tick0, otherwise from tick1
-        fine: bool,
     },
 
     /// `value`, set the Channel Volume
@@ -146,6 +138,19 @@ pub enum TrackEffect {
         waveform: Waveform,
         /// retrig when a new instrument is played.
         retrig: bool,
+    },
+
+    /// `position` [0.0..1.0], sets the panning position
+    /// 0.0 is the leftmost position and 1.0 the rightmost
+    /// Panning effect
+    Panning(f32),
+
+    /// `(speed, tick)`, this effect slide the panning position
+    /// Panning effect
+    PanningSlide {
+        speed: f32,
+        /// if true, only at tick0, otherwise from tick1
+        fine: bool,
     },
 
     /// `speed`
@@ -287,22 +292,6 @@ impl TrackEffect {
                 half1: h1 + o1,
                 half2: h2 + o2,
             }),
-            (TrackEffect::ChannelPanning(h1), TrackEffect::ChannelPanning(o1)) => {
-                Some(TrackEffect::ChannelPanning(h1 + o1))
-            }
-            (
-                TrackEffect::ChannelPanningSlide {
-                    speed: h1,
-                    fine: _tick1,
-                },
-                TrackEffect::ChannelPanningSlide {
-                    speed: o1,
-                    fine: tick2,
-                },
-            ) => Some(TrackEffect::ChannelPanningSlide {
-                speed: h1 + o1,
-                fine: *tick2,
-            }),
             (TrackEffect::ChannelVolume(value1), TrackEffect::ChannelVolume(value2)) => Some(
                 TrackEffect::ChannelVolume((value1 + value2).clamp(0.0, 1.0)),
             ),
@@ -410,6 +399,22 @@ impl TrackEffect {
                     retrig: *o2,
                 }) // overwrite values
             }
+            (TrackEffect::Panning(h1), TrackEffect::Panning(o1)) => {
+                Some(TrackEffect::Panning(h1 + o1))
+            }
+            (
+                TrackEffect::PanningSlide {
+                    speed: h1,
+                    fine: _tick1,
+                },
+                TrackEffect::PanningSlide {
+                    speed: o1,
+                    fine: tick2,
+                },
+            ) => Some(TrackEffect::PanningSlide {
+                speed: h1 + o1,
+                fine: *tick2,
+            }),
             (TrackEffect::Portamento(h1), TrackEffect::Portamento(o1)) => {
                 Some(TrackEffect::Portamento(h1 + o1))
             }

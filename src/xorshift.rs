@@ -14,11 +14,21 @@ pub struct XorShift8 {
 
 #[cfg(any(feature = "rand8"))]
 impl XorShift8 {
-    pub fn new(seed: u8) -> Self {
-        if seed == 0 {
-            panic!("The seed cannot be 0 for an xorshift generator.");
-        }
-        XorShift8 { state: seed }
+    pub fn new(seed: Option<u8>) -> Self {
+        let s = if let Some(v) = seed {
+            if v == 0 {
+                panic!("The seed cannot be 0 for an xorshift generator.");
+            } else {
+                v
+            }
+        } else {
+            251
+        };
+        Self { state: s }
+    }
+
+    pub fn get_seed(&self) -> u8 {
+        self.state
     }
 
     /// Next f32 random number using next rand8
@@ -52,11 +62,21 @@ pub struct XorShift16 {
 
 #[cfg(any(feature = "rand16"))]
 impl XorShift16 {
-    pub fn new(seed: u16) -> Self {
-        if seed == 0 {
-            panic!("The seed cannot be 0 for an xorshift generator.");
-        }
-        XorShift16 { state: seed }
+    pub fn new(seed: Option<u16>) -> Self {
+        let s = if let Some(v) = seed {
+            if v == 0 {
+                panic!("The seed cannot be 0 for an xorshift generator.");
+            } else {
+                v
+            }
+        } else {
+            65521
+        };
+        Self { state: s }
+    }
+
+    pub fn get_seed(&self) -> u16 {
+        self.state
     }
 
     /// Next f32 random number using next rand16
@@ -88,11 +108,21 @@ pub struct XorShift32 {
 }
 
 impl XorShift32 {
-    pub fn new(seed: u32) -> Self {
-        if seed == 0 {
-            panic!("The seed cannot be 0 for an xorshift generator.");
-        }
-        XorShift32 { state: seed }
+    pub fn new(seed: Option<u32>) -> Self {
+        let s = if let Some(v) = seed {
+            if v == 0 {
+                panic!("The seed cannot be 0 for an xorshift generator.");
+            } else {
+                v
+            }
+        } else {
+            4294967291
+        };
+        XorShift32 { state: s }
+    }
+
+    pub fn get_seed(&self) -> u32 {
+        self.state
     }
 
     /// Next f32 random number using next rand32
@@ -125,13 +155,22 @@ pub struct XorShift64 {
 
 #[cfg(any(feature = "rand64"))]
 impl XorShift64 {
-    pub fn new(seed: u64) -> Self {
-        if seed == 0 {
-            panic!("The seed cannot be 0 for an xorshift generator.");
-        }
-        XorShift64 { state: seed }
+    pub fn new(seed: Option<u64>) -> Self {
+        let s = if let Some(v) = seed {
+            if v == 0 {
+                panic!("The seed cannot be 0 for an xorshift generator.");
+            } else {
+                v
+            }
+        } else {
+            9223372036854775783
+        };
+        Self { state: s }
     }
 
+    pub fn get_seed(&self) -> u64 {
+        self.state
+    }
     /// Next f64 random number using next rand64
     pub fn next_f64(&mut self) -> f64 {
         let max = u64::MAX as f64;

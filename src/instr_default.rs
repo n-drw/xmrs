@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 use serde_big_array::BigArray;
 
 use crate::instr_midi::InstrMidi;
-use crate::instr_vibrato::InstrVibrato;
 use crate::sample::Sample;
+use crate::vibrato::Vibrato;
 use crate::{envelope::Envelope, pitch::Pitch};
 
 use alloc::{vec, vec::Vec};
@@ -94,7 +94,7 @@ pub struct InstrDefault {
     // === Pitch
     pub pitch_envelope: Envelope,
     pub pitch_envelope_as_low_pass_filter: bool,
-    pub vibrato: InstrVibrato,
+    pub vibrato: Vibrato,
 
     // === Volume
     pub volume_envelope: Envelope,
@@ -142,7 +142,7 @@ impl Default for InstrDefault {
         Self {
             pitch_envelope: Envelope::default(),
             pitch_envelope_as_low_pass_filter: false,
-            vibrato: InstrVibrato::default(),
+            vibrato: Vibrato::default(),
 
             volume_envelope: Envelope::default(),
             global_volume: 1.0,

@@ -31,8 +31,8 @@ pub struct Module {
     pub frequency_type: FrequencyType,
     /// Restart index in `pattern_order`
     pub restart_position: usize,
-    pub default_tempo: u16,
-    pub default_bpm: u16,
+    pub default_tempo: usize,
+    pub default_bpm: usize,
     /// Defines the exact order for the patterns playback
     /// It is possible to have several music in the same Module
     pub pattern_order: Vec<Vec<usize>>,

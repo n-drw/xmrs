@@ -522,8 +522,8 @@ impl S3mModule {
         module.name = self.header.title.clone();
         module.comment = "XmRs reader".to_string();
         module.frequency_type = FrequencyType::LinearFrequencies;
-        module.default_tempo = self.header.speed as u16;
-        module.default_bpm = self.header.tempo as u16;
+        module.default_tempo = self.header.speed as usize;
+        module.default_bpm = self.header.tempo as usize;
         module.pattern_order = orders_helper::parse_orders(&self.positions);
 
         let mut im = ImportMemory::default();

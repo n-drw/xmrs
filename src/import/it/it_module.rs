@@ -305,8 +305,8 @@ impl ItModule {
                 FrequencyType::AmigaFrequencies
             },
             restart_position: 0,
-            default_tempo: self.header.initial_speed as u16,
-            default_bpm: self.header.initial_bpm as u16,
+            default_tempo: self.header.initial_speed as usize,
+            default_bpm: self.header.initial_bpm as usize,
             pattern_order: orders_helper::parse_orders(&self.orders),
             pattern: vec![],
             pattern_names: self.pattern_names.clone(),
@@ -324,7 +324,7 @@ impl ItModule {
 
         // Prepare Samples
         let mut samples: Vec<Sample> = vec![];
-        let mut vibratos: Vec<InstrVibrato> = vec![];
+        let mut vibratos: Vec<Vibrato> = vec![];
         for (i, sh) in self.samples_header.iter().enumerate() {
             let pdata = if sh.is_associated_sample() && self.samples.len() <= i {
                 &self.samples[i]

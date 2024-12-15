@@ -43,8 +43,6 @@ pub mod instr_opl;
 pub mod instr_robsid;
 /// MOS6581 SID Instrument
 pub mod instr_sid;
-/// Vibrato with Steroid
-pub mod instr_vibrato;
 /// Instrument with Steroid
 pub mod instrument;
 /// SoundTracker Module with Steroid
@@ -58,6 +56,8 @@ pub mod pitch;
 pub mod sample;
 /// A slot
 pub mod track_unit;
+/// Vibrato with Steroid
+pub mod vibrato;
 /// All Waveform type
 pub mod waveform;
 /// A simple way for random values

@@ -11,7 +11,7 @@ use num_traits::float::Float;
 
 /// Instrument Vibrato
 #[derive(Default, Serialize, Deserialize, Clone, Copy, Debug)]
-pub struct InstrVibrato {
+pub struct Vibrato {
     pub waveform: Waveform,
     pub speed: f32,
     pub depth: f32,
