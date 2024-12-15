@@ -326,7 +326,7 @@ impl ItModule {
         let mut samples: Vec<Sample> = vec![];
         let mut vibratos: Vec<Vibrato> = vec![];
         for (i, sh) in self.samples_header.iter().enumerate() {
-            let pdata = if sh.is_associated_sample() && self.samples.len() <= i {
+            let pdata = if sh.is_associated_sample() && i < self.samples.len() {
                 &self.samples[i]
             } else {
                 &None
