@@ -81,4 +81,10 @@ impl TrackUnit {
             .iter()
             .any(|effect| matches!(effect, TrackEffect::VolumeSlide { speed: _, fine: _ }))
     }
+
+    pub fn has_global_volume_slide(&self) -> bool {
+        self.global_effects
+            .iter()
+            .any(|effect| matches!(effect, GlobalEffect::VolumeSlide { speed: _, fine: _ }))
+    }
 }

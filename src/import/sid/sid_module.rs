@@ -1,6 +1,7 @@
 use alloc::format;
 use alloc::{vec, vec::Vec};
 
+use crate::import::import_memory::{ImportMemory, MemoryType};
 use crate::prelude::*;
 
 use super::instr_helper::InstrHelper;
@@ -27,13 +28,21 @@ impl SidModule {
                 "{} - {} (song #{})",
                 self.sid.copyright, self.sid.author, song_number
             );
-            module.default_tempo = (1 + self.sid.resetspd) as u16;
+            module.default_tempo = (1 + self.sid.resetspd) as usize;
 
             let mut patterns = self.pattern_helper.get_patterns(song_number);
             PatternHelper::split_large_patterns(&mut patterns);
             let (patterns, pattern_order) = PatternHelper::cleanup_patterns(&patterns);
+            let pattern_order = vec![pattern_order];
 
-            module.pattern = patterns;
+            let mut im = ImportMemory::default();
+            module.pattern = im.unpack_patterns(
+                FrequencyType::AmigaFrequencies,
+                MemoryType::Mod,
+                &pattern_order,
+                &patterns,
+            );
+
             module.pattern_order = pattern_order;
 
             let idst = InstrHelper::irss_to_instruments(&self.instruments, original_instruments);

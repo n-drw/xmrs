@@ -267,7 +267,7 @@ impl PatternHelper {
         (dest, order)
     }
 
-    pub fn split_large_patterns(patterns: &mut Vec<Pattern>) {
+    pub fn split_large_patterns(patterns: &mut Vec<Vec<Vec<PatternSlot>>>) {
         let max_size = 256;
         let mut i = 0;
 

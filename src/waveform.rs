@@ -61,21 +61,20 @@ impl Waveform {
     }
 }
 
+#[derive(Default, Clone, Copy, Debug)]
 pub struct WaveformState {
     wf: Waveform,
     rng: XorShift32,
 }
 
-impl Default for WaveformState {
-    fn default() -> Self {
+impl WaveformState {
+    pub fn new(wf: Waveform) -> Self {
         Self {
-            wf: Waveform::default(),
+            wf,
             rng: XorShift32::default(),
         }
     }
-}
 
-impl WaveformState {
     pub fn value(&mut self, step: f32) -> f32 {
         if let Waveform::Random = self.wf {
             self.rng.next_f32()

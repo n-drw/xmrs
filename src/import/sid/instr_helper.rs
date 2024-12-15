@@ -16,7 +16,7 @@ impl InstrHelper {
     fn sid_to_sample(voice: &SidVoice) -> Sample {
         let mut name = String::from("Unknown Waveform");
         let mut data = SampleDataType::Mono8(vec![0; 128]);
-        let flags = LoopType::Forward;
+        let loop_flag = LoopType::Forward;
 
         if voice.ctrl_noise {
             name = String::from("Noise");
@@ -34,14 +34,17 @@ impl InstrHelper {
 
         Sample {
             name,
+            relative_pitch: 0,
+            finetune: 0.0,
+            volume: 1.0,
+            panning: 0.5,
+            loop_flag,
             loop_start: 0,
             loop_length: 128,
-            volume: 1.0,
-            finetune: 0.0,
-            flags,
-            panning: 0.5,
-            relative_pitch: 0, // C-4
-            data,
+            sustain_loop_flag: LoopType::No,
+            sustain_loop_start: 0,
+            sustain_loop_length: 0,
+            data: Some(data),
         }
     }
 
@@ -178,7 +181,7 @@ impl InstrHelper {
         //FIXME: instr.sample = ...;
         let mut s: Sample = Self::sid_to_sample(&sid);
         s.relative_pitch = 24;
-        instr.sample = vec![s];
+        instr.sample = vec![Some(s)];
 
         instr
     }
