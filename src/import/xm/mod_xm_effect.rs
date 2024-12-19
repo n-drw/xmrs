@@ -110,7 +110,7 @@ impl ModXmEffect {
             }
             0x0C => {
                 return Some(vec![TrackImportEffect::Volume(
-                    (current.effect_parameter.max(64) as f32) / 64.0,
+                    (current.effect_parameter.min(64) as f32) / 64.0,
                     0,
                 )])
             }
@@ -378,7 +378,7 @@ impl ModXmEffect {
             // Gxx: Set global volume
             0x10 => {
                 return Some(GlobalEffect::Volume(
-                    (current.effect_parameter.max(64) as f32) / 64.0,
+                    (current.effect_parameter.min(64) as f32) / 64.0,
                 ))
             }
             // Hxy: Global volume slide
