@@ -34,7 +34,7 @@ pub struct Envelope {
     pub sustain_enabled: bool,
     /// index in `point`
     pub sustain_start_point: usize,
-    /// inde xin `point`
+    /// index in `point`
     pub sustain_end_point: usize,
 
     pub loop_enabled: bool,
@@ -45,19 +45,24 @@ pub struct Envelope {
 }
 
 impl Envelope {
-    pub fn in_sustain_point(&self, frame: usize) -> bool {
-        if self.sustain_enabled && self.sustain_start_point <= self.sustain_end_point {
-            frame >= self.sustain_start_point && frame <= self.sustain_end_point
-        } else {
-            false
+    pub fn loop_in_sustain(&self, frame: usize) -> usize {
+        if self.sustain_enabled {
+            let sustain_end = self.point[self.sustain_end_point].frame;
+            if frame > sustain_end {
+                return self.point[self.sustain_start_point].frame;
+            }
         }
+        frame
     }
 
-    pub fn in_loop_point(&self, frame: usize) -> bool {
-        if self.loop_enabled && self.loop_start_point <= self.loop_end_point {
-            frame >= self.loop_start_point && frame <= self.loop_end_point
-        } else {
-            false
+    pub fn loop_in_loop(&self, frame: usize) -> usize {
+        if self.loop_enabled {
+            let loop_end = self.point[self.loop_end_point].frame;
+            if frame > loop_end {
+                return self.point[self.loop_start_point].frame;
+            }
         }
+        frame
     }
+
 }
