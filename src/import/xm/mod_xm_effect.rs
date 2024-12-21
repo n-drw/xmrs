@@ -258,33 +258,28 @@ impl ModXmEffect {
                 ))
             }
             // V - 0x51..0x5F undefined...
-            0x5 => {
-                return Some(TrackImportEffect::Volume(
-                    (current.volume - 0x20) as f32 / 64.0,
-                    0,
-                ))
-            }
+            0x5 => return None,
             // - - Volume slide down (0..15)
             0x6 => {
-                return Some(TrackImportEffect::VolumeSlide0(
+                return Some(TrackImportEffect::VolumeSlideN(
                     -((current.volume & 0x0F) as f32) / 64.0,
                 ))
             }
             // + - Volume slide up (0..15)
             0x7 => {
-                return Some(TrackImportEffect::VolumeSlide0(
+                return Some(TrackImportEffect::VolumeSlideN(
                     ((current.volume & 0x0F) as f32) / 64.0,
                 ))
             }
             // D - Fine volume slide down (0..15)
             0x8 => {
-                return Some(TrackImportEffect::VolumeSlideN(
+                return Some(TrackImportEffect::VolumeSlide0(
                     -((current.volume & 0x0F) as f32) / 64.0,
                 ))
             }
             // U - Fine volume slide up (0..15)
             0x9 => {
-                return Some(TrackImportEffect::VolumeSlideN(
+                return Some(TrackImportEffect::VolumeSlide0(
                     ((current.volume & 0x0F) as f32) / 64.0,
                 ))
             }
@@ -307,7 +302,7 @@ impl ModXmEffect {
                 }
             }
             // P - Set panning
-            0xC => return Some(TrackImportEffect::Panning((current.volume as f32) / 16.0)),
+            0xC => return Some(TrackImportEffect::Panning(((current.volume & 0x0F)as f32) / 16.0)),
             // L - Panning slide left
             0xD => {
                 return Some(TrackImportEffect::PanningSlideN(
