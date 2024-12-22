@@ -261,25 +261,25 @@ impl ModXmEffect {
             0x5 => return None,
             // - - Volume slide down (0..15)
             0x6 => {
-                return Some(TrackImportEffect::VolumeSlideN(
+                return Some(TrackImportEffect::VolumeSlide0(
                     -((current.volume & 0x0F) as f32) / 64.0,
                 ))
             }
             // + - Volume slide up (0..15)
             0x7 => {
-                return Some(TrackImportEffect::VolumeSlideN(
+                return Some(TrackImportEffect::VolumeSlide0(
                     ((current.volume & 0x0F) as f32) / 64.0,
                 ))
             }
             // D - Fine volume slide down (0..15)
             0x8 => {
-                return Some(TrackImportEffect::VolumeSlide0(
+                return Some(TrackImportEffect::VolumeSlideN(
                     -((current.volume & 0x0F) as f32) / 64.0,
                 ))
             }
             // U - Fine volume slide up (0..15)
             0x9 => {
-                return Some(TrackImportEffect::VolumeSlide0(
+                return Some(TrackImportEffect::VolumeSlideN(
                     ((current.volume & 0x0F) as f32) / 64.0,
                 ))
             }
