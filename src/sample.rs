@@ -100,6 +100,14 @@ impl Sample {
         self.panning = self.panning.clamp(0.0, 1.0);
         self.finetune = self.finetune.clamp(-1.0, 1.0);
         self.relative_pitch = self.relative_pitch.clamp(-95, 96);
+
+        if self.sustain_loop_start as usize > self.len() {
+            self.sustain_loop_start = 0;
+        }
+        if self.sustain_loop_start as usize + self.sustain_loop_length as usize > self.len() {
+            self.sustain_loop_length = self.len() as u32 - self.sustain_loop_start;
+        }
+
         if self.loop_start as usize > self.len() {
             self.loop_start = 0;
         }
@@ -108,43 +116,50 @@ impl Sample {
         }
     }
 
-    /// returns the real position in the sample
-    pub fn meta_seek(&self, pos: usize) -> usize {
-        let len = self.len();
-        let loop_start = self.loop_start as usize;
-        let loop_length = self.loop_length as usize;
-        let loop_end = loop_start + loop_length;
 
-        match self.loop_flag {
+    fn calculate_loop(&self, pos: usize, start: usize, length: usize, loop_type: LoopType) -> usize {
+        let end = start + length;
+        match loop_type {
             LoopType::No => {
-                if pos < len {
-                    return pos;
+                if pos < self.len() {
+                    pos
                 } else {
-                    return len - 1;
+                    self.len() - 1
                 }
             }
             LoopType::Forward => {
-                if pos < loop_end {
-                    return pos;
+                if pos < end {
+                    pos
                 } else {
-                    return loop_start + (pos - loop_start) % loop_length;
+                    start + (pos - start) % length
                 }
             }
             LoopType::PingPong => {
-                if pos < loop_end {
-                    return pos;
+                if pos < end {
+                    pos
                 } else {
-                    let total_length = 2 * loop_length;
-                    let mod_pos = (pos - loop_start) % total_length;
-                    if mod_pos < loop_length {
-                        return loop_start + mod_pos;
+                    let total_length = 2 * length;
+                    let mod_pos = (pos - start) % total_length;
+                    if mod_pos < length {
+                        start + mod_pos
                     } else {
-                        return loop_end - (mod_pos - loop_length) - 1;
+                        end - (mod_pos - length) - 1
                     }
                 }
             }
         }
     }
+
+    /// Returns the real position in the sample
+    /// The calling function must save the real position at each step to avoid problems at the end of the sustain
+    pub fn meta_seek(&self, pos: usize, sustain: bool) -> usize {
+        if sustain && self.sustain_loop_length != 0 {
+            self.calculate_loop(pos, self.sustain_loop_start as usize, self.sustain_loop_length as usize, self.sustain_loop_flag)
+        } else {
+            self.calculate_loop(pos, self.loop_start as usize, self.loop_length as usize, self.loop_flag)
+        }
+    }
+
 
     /// return sample size (8 or 16 bits)
     pub fn bits(&self) -> u8 {
