@@ -62,8 +62,8 @@ impl Default for Module {
 
 impl Module {
     /// get song length
-    pub fn get_song_length(&self, song: usize) -> usize {
-        self.pattern_order[song].len()
+    pub fn get_song_length(&self) -> usize {
+        self.pattern_order.len()
     }
 
     /// get number of channels

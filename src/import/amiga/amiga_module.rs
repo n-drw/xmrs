@@ -12,14 +12,14 @@ use alloc::{vec, vec::Vec};
 
 #[derive(Default, Debug)]
 pub struct AmigaModule {
-    title: String,
-    samples: Vec<AmigaSample>, // 15 or 31
-    song_length: u8,
-    restart_position: u8,
-    positions: Vec<u8>, // 128
-    tag: String,
-    patterns: Vec<Vec<Vec<PatternSlot>>>, // pattern, row, element
-    audio: Vec<Vec<i8>>,
+    pub title: String,
+    pub samples: Vec<AmigaSample>, // 15 or 31
+    pub song_length: u8,
+    pub restart_position: u8,
+    pub positions: Vec<u8>, // 128
+    pub tag: String,
+    pub patterns: Vec<Vec<Vec<PatternSlot>>>, // pattern, row, element
+    pub audio: Vec<Vec<i8>>,
 }
 
 impl AmigaModule {
